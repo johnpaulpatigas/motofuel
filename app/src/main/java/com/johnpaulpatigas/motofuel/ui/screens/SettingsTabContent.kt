@@ -530,7 +530,7 @@ fun SettingsTabContent(
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "App & Engine Specs",
+                        text = "App Info",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -538,9 +538,8 @@ fun SettingsTabContent(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                InfoRow(label = "Application Version", value = "${BuildConfig.VERSION_NAME} (${BuildConfig.BUILD_DATE})")
-                InfoRow(label = "Local Database", value = "Android Room ORM")
-                InfoRow(label = "Prediction Model", value = "Recursive Least Squares (RLS)")
+                InfoRow(label = "Build Date", value = BuildConfig.BUILD_DATE)
+                InfoRow(label = "Build Time", value = BuildConfig.BUILD_TIME)
             }
         }
 
