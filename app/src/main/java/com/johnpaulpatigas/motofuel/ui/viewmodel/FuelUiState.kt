@@ -15,7 +15,6 @@ data class FuelUiState(
     val recordToEdit: RefuelingRecord? = null,
     val recordToDelete: RefuelingRecord? = null,
     val isClearAllDialogOpen: Boolean = false,
-    val isInfoDialogOpen: Boolean = false,
     val validationError: String? = null,
     val userMessage: String? = null
 )

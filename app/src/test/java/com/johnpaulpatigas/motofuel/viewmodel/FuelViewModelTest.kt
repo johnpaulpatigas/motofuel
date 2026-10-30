@@ -74,15 +74,6 @@ class FuelViewModelTest {
     }
 
     @Test
-    fun `openInfoDialog and closeInfoDialog update UI state`() {
-        assertFalse(viewModel.uiState.value.isInfoDialogOpen)
-        viewModel.openInfoDialog()
-        assertTrue(viewModel.uiState.value.isInfoDialogOpen)
-        viewModel.closeInfoDialog()
-        assertFalse(viewModel.uiState.value.isInfoDialogOpen)
-    }
-
-    @Test
     fun `addRecord with invalid format sets validation error`() {
         viewModel.openAddDialog()
         viewModel.addRecord("abc", "10.0")

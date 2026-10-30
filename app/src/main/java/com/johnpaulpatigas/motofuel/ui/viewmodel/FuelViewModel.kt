@@ -138,14 +138,6 @@ class FuelViewModel @Inject constructor(
         _uiState.update { it.copy(recordToDelete = null) }
     }
 
-    fun openInfoDialog() {
-        _uiState.update { it.copy(isInfoDialogOpen = true) }
-    }
-
-    fun closeInfoDialog() {
-        _uiState.update { it.copy(isInfoDialogOpen = false) }
-    }
-
     fun dismissUserMessage() {
         _uiState.update { it.copy(userMessage = null) }
     }
