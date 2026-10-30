@@ -113,4 +113,29 @@ class RecursiveLeastSquaresEngineTest {
         assertTrue(finalState.standardError > 0.0)
         assertTrue(finalState.marginOfError95 > 0.0)
     }
+
+    @Test
+    fun `RlsState - Student t critical values match degrees of freedom`() {
+        assertEquals(12.706, RlsState.getTCriticalValue95(1), 0.001)
+        assertEquals(4.303, RlsState.getTCriticalValue95(2), 0.001)
+        assertEquals(3.182, RlsState.getTCriticalValue95(3), 0.001)
+        assertEquals(2.228, RlsState.getTCriticalValue95(10), 0.001)
+        assertEquals(1.96, RlsState.getTCriticalValue95(30), 0.001)
+    }
+
+    @Test
+    fun `update - Huber robust loss suppresses extreme outlier distortion`() {
+        // Process a few baseline observations around 30 km/L
+        var state = RlsState()
+        state = rlsEngine.update(state, 300.0, 10.0) // 30 km/L
+        state = rlsEngine.update(state, 300.0, 10.0) // 30 km/L
+        state = rlsEngine.update(state, 300.0, 10.0) // 30 km/L
+        val thetaBeforeOutlier = state.theta
+
+        // Introduce a massive outlier (e.g., 3000 km interval on 10L = 300 km/L typo)
+        val stateWithOutlier = rlsEngine.update(state, 3000.0, 10.0)
+
+        // Verify that Huber attenuation prevents theta from jumping wildly toward 300 km/L
+        assertTrue(stateWithOutlier.theta < thetaBeforeOutlier + 10.0)
+    }
 }

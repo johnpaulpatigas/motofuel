@@ -7,11 +7,12 @@ import com.johnpaulpatigas.motofuel.data.model.ReliabilityLevel
 import com.johnpaulpatigas.motofuel.data.model.TrendPoint
 import kotlin.math.max
 import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 /**
  * Estimation engine that processes refueling records, computes interval distance,
- * baseline behavior, cumulative averages, recent moving averages, RLS online predictions,
- * and statistical uncertainty.
+ * cumulative baseline estimators, recent moving averages, RLS online predictions,
+ * and multi-factor statistical reliability.
  */
 class EstimationEngine(
     private val rlsEngine: RecursiveLeastSquaresEngine = RecursiveLeastSquaresEngine()
@@ -19,12 +20,11 @@ class EstimationEngine(
 
     /**
      * Enriches raw database entities with interval distance and per-interval km/L.
-     * Records are assumed to be sorted chronologically by odometer reading.
+     * Records are sorted chronologically by timestamp and odometer reading.
      */
     fun computeDerivedRecords(entities: List<RefuelingEntity>): List<RefuelingRecord> {
         if (entities.isEmpty()) return emptyList()
 
-        // Sort chronologically by timestamp, then odometer
         val sorted = entities.sortedWith(
             compareBy<RefuelingEntity> { it.timestamp }.thenBy { it.odometerKm }
         )
@@ -49,7 +49,8 @@ class EstimationEngine(
                 )
             } else {
                 val previous = sorted[i - 1]
-                val intervalKm = current.odometerKm - previous.odometerKm
+                val rawInterval = current.odometerKm - previous.odometerKm
+                val intervalKm = max(0.0, rawInterval)
 
                 val intervalKmLiters = if (intervalKm > 0.0 && current.litersAdded > 0.0) {
                     intervalKm / current.litersAdded
@@ -62,7 +63,7 @@ class EstimationEngine(
                         litersAdded = current.litersAdded,
                         pricePerLiter = current.pricePerLiter,
                         timestamp = current.timestamp,
-                        intervalKm = max(0.0, intervalKm),
+                        intervalKm = intervalKm,
                         intervalKmLiters = intervalKmLiters,
                         isBaseline = false
                     )
@@ -74,8 +75,8 @@ class EstimationEngine(
     }
 
     /**
-     * Compute full estimation summary, including cumulative km/L, recent km/L,
-     * RLS prediction, statistical confidence, and trend points.
+     * Compute full estimation summary, including cumulative baseline km/L,
+     * RLS online predictions, multi-factor statistical confidence, and trend points.
      */
     fun evaluate(
         records: List<RefuelingRecord>,
@@ -135,6 +136,8 @@ class EstimationEngine(
 
         val totalDistanceKm = intervals.sumOf { it.intervalKm ?: 0.0 }
         val totalFuelConsumed = intervals.sumOf { it.litersAdded }
+
+        // Cumulative Baseline Estimator: Total Distance / Total Fuel Consumed
         val cumulativeKmLiters = if (totalFuelConsumed > 0.0) totalDistanceKm / totalFuelConsumed else null
 
         // Recent moving average (last 3 intervals)
@@ -157,7 +160,7 @@ class EstimationEngine(
         } else null
 
         // Vehicle Setup & Cost Metrics
-        val estimatedRangeKm = if (tankCapacityLiters > 0.0 && predictedKmLiters != null) {
+        val estimatedRangeKm = if (tankCapacityLiters > 0.0 && predictedKmLiters != null && predictedKmLiters > 0.0) {
             predictedKmLiters * tankCapacityLiters
         } else null
 
@@ -170,23 +173,29 @@ class EstimationEngine(
             totalSpendCost / totalDistanceKm
         } else null
 
-        // Determine reliability rating
-        val intervalCount = intervals.size
-        val reliability = when {
-            intervalCount < 2 -> ReliabilityLevel.LOW
-            intervalCount in 2..4 -> ReliabilityLevel.MEDIUM
-            else -> ReliabilityLevel.HIGH
-        }
+        // Extract recent predictions for stability evaluation
+        val recentPredictions = rlsStates.takeLast(5).map { it.theta }.filter { it > 0.0 }
+
+        // Determine multi-factor statistical reliability level
+        val reliability = determineReliabilityLevel(
+            intervalCount = intervals.size,
+            totalDistanceKm = totalDistanceKm,
+            predictedKmLiters = predictedKmLiters,
+            standardError = finalRlsState.standardError,
+            marginOfError = uncertaintyMargin,
+            recentPredictions = recentPredictions
+        )
 
         val explanation = buildExplanation(
             reliability = reliability,
-            intervalCount = intervalCount,
+            intervalCount = intervals.size,
+            totalDistanceKm = totalDistanceKm,
             uncertaintyMargin = uncertaintyMargin,
             cumulativeKmLiters = cumulativeKmLiters,
             predictedKmLiters = predictedKmLiters
         )
 
-        // Build trend points for chart
+        // Build trend points for UI charts
         var runningDistance = 0.0
         var runningFuel = 0.0
         val trendPoints = mutableListOf<TrendPoint>()
@@ -223,7 +232,7 @@ class EstimationEngine(
             totalFuelConsumedLiters = totalFuelConsumed,
             totalFuelAddedLiters = totalFuelAdded,
             recordCount = recordCount,
-            intervalCount = intervalCount,
+            intervalCount = intervals.size,
             explanation = explanation,
             trendPoints = trendPoints,
             tankCapacityLiters = tankCapacityLiters,
@@ -237,27 +246,65 @@ class EstimationEngine(
         )
     }
 
+    private fun determineReliabilityLevel(
+        intervalCount: Int,
+        totalDistanceKm: Double,
+        predictedKmLiters: Double?,
+        standardError: Double?,
+        marginOfError: Double?,
+        recentPredictions: List<Double>
+    ): ReliabilityLevel {
+        if (intervalCount < 1 || totalDistanceKm < 20.0 || predictedKmLiters == null || predictedKmLiters <= 0.0) {
+            return ReliabilityLevel.INSUFFICIENT_DATA
+        }
+
+        val relativeSe = if (standardError != null && standardError > 0.0) standardError / predictedKmLiters else 1.0
+        val relativeMoe = if (marginOfError != null && marginOfError > 0.0) marginOfError / predictedKmLiters else 1.0
+
+        val recentCoeffVar = if (recentPredictions.size >= 3) {
+            val mean = recentPredictions.average()
+            if (mean > 0.0) {
+                val variance = recentPredictions.sumOf { (it - mean) * (it - mean) } / recentPredictions.size
+                sqrt(variance) / mean
+            } else 1.0
+        } else 1.0
+
+        return when {
+            intervalCount >= 5 && totalDistanceKm >= 300.0 && relativeMoe <= 0.25 && relativeSe <= 0.10 && recentCoeffVar <= 0.08 -> {
+                ReliabilityLevel.HIGH
+            }
+            intervalCount >= 2 && totalDistanceKm >= 100.0 && relativeSe <= 0.25 -> {
+                ReliabilityLevel.MEDIUM
+            }
+            else -> {
+                ReliabilityLevel.LOW
+            }
+        }
+    }
+
     private fun buildExplanation(
         reliability: ReliabilityLevel,
         intervalCount: Int,
+        totalDistanceKm: Double,
         uncertaintyMargin: Double?,
         cumulativeKmLiters: Double?,
         predictedKmLiters: Double?
     ): String {
+        val distStr = formatKm(totalDistanceKm)
+        val marginStr = uncertaintyMargin?.let { " (±${formatOneDecimal(it)} km/L)" } ?: ""
+
         return when (reliability) {
             ReliabilityLevel.INSUFFICIENT_DATA -> {
-                "At least 2 refueling records (1 distance interval) are required to begin estimating fuel economy."
+                "At least 2 refueling records (1 distance interval) with increased odometer readings are required to begin estimating fuel economy."
             }
             ReliabilityLevel.LOW -> {
-                "Low statistical confidence based on $intervalCount interval. Additional refueling logs will improve estimation accuracy."
+                "Low statistical confidence based on $intervalCount interval ($distStr km recorded). Add more refueling logs to reduce partial-tank inventory noise."
             }
             ReliabilityLevel.MEDIUM -> {
-                val marginStr = uncertaintyMargin?.let { " (±${formatOneDecimal(it)} km/L)" } ?: ""
-                "Medium confidence based on $intervalCount intervals$marginStr. Recursive Least Squares algorithm filter active."
+                "Medium confidence based on $intervalCount intervals across $distStr km$marginStr. Recursive Least Squares engine active."
             }
             ReliabilityLevel.HIGH -> {
-                val marginStr = uncertaintyMargin?.let { " (±${formatOneDecimal(it)} km/L)" } ?: ""
-                "High confidence based on $intervalCount intervals$marginStr. Recursive Least Squares algorithm filter active."
+                "High confidence based on $intervalCount intervals across $distStr km$marginStr. Prediction demonstrates low parameter variance and high convergence stability."
             }
         }
     }
