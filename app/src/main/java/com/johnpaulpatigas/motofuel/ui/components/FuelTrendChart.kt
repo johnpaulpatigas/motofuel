@@ -16,17 +16,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,13 +35,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -51,6 +52,13 @@ import com.johnpaulpatigas.motofuel.data.model.TrendPoint
 import com.johnpaulpatigas.motofuel.ui.theme.semanticColors
 import com.johnpaulpatigas.motofuel.util.FormatUtils
 import kotlin.math.abs
+
+enum class TrendChartMode(val label: String) {
+    RLS_ADAPTIVE("RLS Trend"),
+    ROLLING_WINDOW("Rolling W=5"),
+    CUMULATIVE("Cumulative"),
+    COMPARE_ALL("Compare All")
+}
 
 @Composable
 fun FuelTrendChart(
@@ -64,6 +72,8 @@ fun FuelTrendChart(
     val colorScheme = MaterialTheme.colorScheme
     val textMeasurer = rememberTextMeasurer()
 
+    var selectedChartMode by remember { mutableStateOf(TrendChartMode.RLS_ADAPTIVE) }
+
     val animatedProgress by animateFloatAsState(
         targetValue = 1f,
         animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing),
@@ -75,14 +85,6 @@ fun FuelTrendChart(
             fontSize = 10.sp,
             fontWeight = FontWeight.Medium,
             color = colorScheme.onSurfaceVariant
-        )
-    }
-
-    val axisValueLabelStyle = remember(typography, colorScheme) {
-        typography.labelSmall.copy(
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            color = colorScheme.onSurface
         )
     }
 
@@ -133,14 +135,41 @@ fun FuelTrendChart(
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "Fuel Economy Trend (RLS Filter)",
+                        text = "Fuel Economy Trends",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Chart Mode Selector Filter Chips
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                TrendChartMode.entries.forEach { mode ->
+                    val isSelected = selectedChartMode == mode
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { selectedChartMode = mode },
+                        label = {
+                            Text(
+                                text = mode.label,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
 
             if (trendPoints.size < 2) {
                 Box(
@@ -157,21 +186,31 @@ fun FuelTrendChart(
                 }
             } else {
                 val primaryColor = MaterialTheme.colorScheme.primary
+                val tertiaryColor = MaterialTheme.colorScheme.tertiary
+                val secondaryColor = MaterialTheme.colorScheme.secondary
                 val outlineColor = MaterialTheme.colorScheme.outlineVariant
                 val gridLineColor = MaterialTheme.colorScheme.outlineVariant
-                val activePointColor = MaterialTheme.colorScheme.tertiary
+                val activePointColor = MaterialTheme.colorScheme.error
                 val targetLineColor = MaterialTheme.semanticColors.good
 
-                val minRls = trendPoints.minOf { it.rlsPredictedKmLiters ?: 0.0 }
-                val maxRls = trendPoints.maxOf { it.rlsPredictedKmLiters ?: 0.0 }
-                val minRaw = trendPoints.minOfOrNull { it.intervalKmLiters ?: Double.MAX_VALUE }?.takeIf { it != Double.MAX_VALUE } ?: minRls
-                val maxRaw = trendPoints.maxOfOrNull { it.intervalKmLiters ?: Double.MIN_VALUE }?.takeIf { it != Double.MIN_VALUE } ?: maxRls
+                // Collect values based on mode
+                val allValues = trendPoints.flatMap { pt ->
+                    listOfNotNull(
+                        pt.rlsPredictedKmLiters,
+                        pt.rollingWindowKmLiters,
+                        pt.cumulativeKmLiters,
+                        pt.intervalKmLiters
+                    )
+                }
 
                 val rawMinOdo = trendPoints.minOf { it.odometerKm }
                 val rawMaxOdo = trendPoints.maxOf { it.odometerKm }
 
-                val overallMin = minOf(minRls, minRaw, if (targetKmLiters > 0) targetKmLiters else minRls)
-                val overallMax = maxOf(maxRls, maxRaw, if (targetKmLiters > 0) targetKmLiters else maxRls)
+                val minVal = allValues.minOrNull() ?: 10.0
+                val maxVal = allValues.maxOrNull() ?: 50.0
+
+                val overallMin = minOf(minVal, if (targetKmLiters > 0) targetKmLiters else minVal)
+                val overallMax = maxOf(maxVal, if (targetKmLiters > 0) targetKmLiters else maxVal)
 
                 val yMin = (overallMin * 0.85).coerceAtLeast(0.0)
                 val yMax = (overallMax * 1.15).coerceAtLeast(yMin + 5.0)
@@ -186,39 +225,67 @@ fun FuelTrendChart(
                         shape = MaterialTheme.shapes.small,
                         color = MaterialTheme.colorScheme.surfaceContainerHigh
                     ) {
-                        Row(
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
                         ) {
-                            Column {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Text(
-                                    text = "Odo: ${FormatUtils.formatKm(currentPoint.odometerKm)} km",
+                                    text = "Odometer: ${FormatUtils.formatKm(currentPoint.odometerKm)} km",
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 currentPoint.intervalKmLiters?.let { raw ->
                                     Text(
-                                        text = "Raw Interval: ${FormatUtils.formatOneDecimal(raw)} km/L",
-                                        style = MaterialTheme.typography.bodySmall,
+                                        text = "Interval: ${FormatUtils.formatOneDecimal(raw)} km/L",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
 
-                            Text(
-                                text = "Filtered RLS: ${FormatUtils.formatOneDecimal(currentPoint.rlsPredictedKmLiters ?: 0.0)} km/L",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                currentPoint.cumulativeKmLiters?.let { cum ->
+                                    Text(
+                                        text = "Overall: ${FormatUtils.formatOneDecimal(cum)} km/L",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = secondaryColor,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                currentPoint.rollingWindowKmLiters?.let { roll ->
+                                    Text(
+                                        text = "Rolling (W=5): ${FormatUtils.formatOneDecimal(roll)} km/L",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = tertiaryColor,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                currentPoint.rlsPredictedKmLiters?.let { rls ->
+                                    Text(
+                                        text = "RLS: ${FormatUtils.formatOneDecimal(rls)} km/L",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = primaryColor,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
                 }
 
                 val gridDashPathEffect = remember { PathEffect.dashPathEffect(floatArrayOf(8f, 8f), 0f) }
@@ -228,7 +295,7 @@ fun FuelTrendChart(
                 val cachedFillPath = remember { Path() }
                 val cachedLinePath = remember { Path() }
 
-                // Pre-measure all text layouts to avoid allocations inside the Canvas draw loop
+                // Pre-measure all text layouts
                 val yAxisHeader = remember(axisTitleStyle) {
                     textMeasurer.measure(
                         text = "Fuel Economy (km/L)",
@@ -258,21 +325,10 @@ fun FuelTrendChart(
                 val targetGoalText = remember(targetKmLiters, yMin, yMax, targetLineColor, axisLabelStyle) {
                     if (targetKmLiters > 0.0 && targetKmLiters in yMin..yMax) {
                         textMeasurer.measure(
-                            text = "Target Goal: ${FormatUtils.formatOneDecimal(targetKmLiters)} km/L",
+                            text = "Target: ${FormatUtils.formatOneDecimal(targetKmLiters)} km/L",
                             style = axisLabelStyle.copy(color = targetLineColor, fontWeight = FontWeight.Bold)
                         )
                     } else null
-                }
-
-                val pointValueLabels = remember(trendPoints, axisValueLabelStyle) {
-                    trendPoints.map { pt ->
-                        pt.rlsPredictedKmLiters?.let { rls ->
-                            textMeasurer.measure(
-                                text = FormatUtils.formatOneDecimal(rls),
-                                style = axisValueLabelStyle
-                            )
-                        }
-                    }
                 }
 
                 val odoTickLabels = remember(trendPoints, axisLabelStyle) {
@@ -375,104 +431,123 @@ fun FuelTrendChart(
                         )
                     }
 
-                    // Compute Screen Offsets
-                    val offsets = trendPoints.map { pt ->
-                        val xRatio = ((pt.odometerKm - xMin) / (xMax - xMin)).toFloat().coerceIn(0f, 1f)
-                        val yRatio = (((pt.rlsPredictedKmLiters ?: 0.0) - yMin) / (yMax - yMin)).toFloat().coerceIn(0f, 1f)
-
-                        val xPos = leftMargin + xRatio * chartWidth
-                        val yPos = topMargin + chartHeight * (1f - yRatio)
-                        Offset(xPos, yPos)
+                    // Helper to compute screen points for any series
+                    fun computeSeriesOffsets(seriesExtractor: (TrendPoint) -> Double?): List<Offset?> {
+                        return trendPoints.map { pt ->
+                            val valItem = seriesExtractor(pt) ?: return@map null
+                            val xRatio = ((pt.odometerKm - xMin) / (xMax - xMin)).toFloat().coerceIn(0f, 1f)
+                            val yRatio = ((valItem - yMin) / (yMax - yMin)).toFloat().coerceIn(0f, 1f)
+                            Offset(leftMargin + xRatio * chartWidth, topMargin + chartHeight * (1f - yRatio))
+                        }
                     }
 
-                    // 4. Gradient Area Fill under RLS Line
-                    if (offsets.size >= 2) {
-                        val visibleCount = (offsets.size * animatedProgress).toInt().coerceIn(2, offsets.size)
-                        val visibleOffsets = offsets.take(visibleCount)
+                    // Draw a series line on Canvas
+                    fun drawSeriesLine(offsets: List<Offset?>, color: Color, strokeWidthDp: Float = 2.5f) {
+                        val validOffsets = offsets.filterNotNull()
+                        if (validOffsets.size >= 2) {
+                            val visibleCount = (validOffsets.size * animatedProgress).toInt().coerceIn(2, validOffsets.size)
+                            val visible = validOffsets.take(visibleCount)
 
-                        cachedFillPath.reset()
-                        cachedFillPath.apply {
-                            moveTo(visibleOffsets[0].x, topMargin + chartHeight)
-                            visibleOffsets.forEach { lineTo(it.x, it.y) }
-                            lineTo(visibleOffsets.last().x, topMargin + chartHeight)
-                            close()
-                        }
-
-                        drawPath(
-                            path = cachedFillPath,
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    primaryColor.copy(alpha = 0.25f),
-                                    primaryColor.copy(alpha = 0.02f)
-                                ),
-                                startY = topMargin,
-                                endY = topMargin + chartHeight
-                            )
-                        )
-
-                        // Main RLS Line
-                        cachedLinePath.reset()
-                        cachedLinePath.apply {
-                            moveTo(visibleOffsets[0].x, visibleOffsets[0].y)
-                            for (i in 1 until visibleOffsets.size) {
-                                lineTo(visibleOffsets[i].x, visibleOffsets[i].y)
+                            cachedLinePath.reset()
+                            cachedLinePath.moveTo(visible[0].x, visible[0].y)
+                            for (i in 1 until visible.size) {
+                                cachedLinePath.lineTo(visible[i].x, visible[i].y)
                             }
-                        }
 
-                        drawPath(
-                            path = cachedLinePath,
-                            color = primaryColor,
-                            style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
-                        )
+                            drawPath(
+                                path = cachedLinePath,
+                                color = color,
+                                style = Stroke(width = strokeWidthDp.dp.toPx(), cap = StrokeCap.Round)
+                            )
+                        }
                     }
 
-                    // 6. Interactive Points & Labels
-                    offsets.forEachIndexed { idx, pt ->
-                        val isSelected = idx == selectedIndex
+                    // Draw gradient fill under primary series
+                    fun drawSeriesGradient(offsets: List<Offset?>, color: Color) {
+                        val validOffsets = offsets.filterNotNull()
+                        if (validOffsets.size >= 2) {
+                            val visibleCount = (validOffsets.size * animatedProgress).toInt().coerceIn(2, validOffsets.size)
+                            val visible = validOffsets.take(visibleCount)
 
-                        val valResult = pointValueLabels.getOrNull(idx)
-                        if (valResult != null) {
-                            val yLabelPos = if (pt.y - 18.dp.toPx() < topMargin) {
-                                pt.y + 8.dp.toPx()
+                            cachedFillPath.reset()
+                            cachedFillPath.moveTo(visible[0].x, topMargin + chartHeight)
+                            visible.forEach { cachedFillPath.lineTo(it.x, it.y) }
+                            cachedFillPath.lineTo(visible.last().x, topMargin + chartHeight)
+                            cachedFillPath.close()
+
+                            drawPath(
+                                path = cachedFillPath,
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(color.copy(alpha = 0.22f), color.copy(alpha = 0.02f)),
+                                    startY = topMargin,
+                                    endY = topMargin + chartHeight
+                                )
+                            )
+                        }
+                    }
+
+                    val rlsOffsets = computeSeriesOffsets { it.rlsPredictedKmLiters }
+                    val rollingOffsets = computeSeriesOffsets { it.rollingWindowKmLiters }
+                    val cumulativeOffsets = computeSeriesOffsets { it.cumulativeKmLiters }
+
+                    when (selectedChartMode) {
+                        TrendChartMode.RLS_ADAPTIVE -> {
+                            drawSeriesGradient(rlsOffsets, primaryColor)
+                            drawSeriesLine(rlsOffsets, primaryColor, 3f)
+                        }
+                        TrendChartMode.ROLLING_WINDOW -> {
+                            drawSeriesGradient(rollingOffsets, tertiaryColor)
+                            drawSeriesLine(rollingOffsets, tertiaryColor, 3f)
+                        }
+                        TrendChartMode.CUMULATIVE -> {
+                            drawSeriesGradient(cumulativeOffsets, secondaryColor)
+                            drawSeriesLine(cumulativeOffsets, secondaryColor, 3f)
+                        }
+                        TrendChartMode.COMPARE_ALL -> {
+                            drawSeriesLine(cumulativeOffsets, secondaryColor, 2f)
+                            drawSeriesLine(rollingOffsets, tertiaryColor, 2f)
+                            drawSeriesLine(rlsOffsets, primaryColor, 3f)
+                        }
+                    }
+
+                    // Selected Point Guideline & Highlights
+                    val activeOffsets = when (selectedChartMode) {
+                        TrendChartMode.RLS_ADAPTIVE -> rlsOffsets
+                        TrendChartMode.ROLLING_WINDOW -> rollingOffsets
+                        TrendChartMode.CUMULATIVE -> cumulativeOffsets
+                        TrendChartMode.COMPARE_ALL -> rlsOffsets
+                    }
+
+                    activeOffsets.forEachIndexed { idx, pt ->
+                        if (pt != null) {
+                            val isSelected = idx == selectedIndex
+                            if (isSelected) {
+                                drawLine(
+                                    color = activePointColor,
+                                    start = Offset(pt.x, topMargin),
+                                    end = Offset(pt.x, topMargin + chartHeight),
+                                    strokeWidth = 1.5.dp.toPx(),
+                                    pathEffect = activeDashPathEffect
+                                )
+
+                                drawCircle(
+                                    color = activePointColor.copy(alpha = 0.3f),
+                                    radius = 10.dp.toPx(),
+                                    center = pt
+                                )
+
+                                drawCircle(
+                                    color = activePointColor,
+                                    radius = 6.dp.toPx(),
+                                    center = pt
+                                )
                             } else {
-                                pt.y - 16.dp.toPx()
+                                drawCircle(
+                                    color = primaryColor,
+                                    radius = 3.5.dp.toPx(),
+                                    center = pt
+                                )
                             }
-                            val xLabelPos = (pt.x - valResult.size.width / 2f).coerceIn(
-                                leftMargin,
-                                size.width - rightMargin - valResult.size.width
-                            )
-                            drawText(
-                                textLayoutResult = valResult,
-                                topLeft = Offset(xLabelPos, yLabelPos)
-                            )
-                        }
-
-                        if (isSelected) {
-                            drawLine(
-                                color = activePointColor,
-                                start = Offset(pt.x, topMargin),
-                                end = Offset(pt.x, topMargin + chartHeight),
-                                strokeWidth = 1.5.dp.toPx(),
-                                pathEffect = activeDashPathEffect
-                            )
-
-                            drawCircle(
-                                color = activePointColor.copy(alpha = 0.3f),
-                                radius = 10.dp.toPx(),
-                                center = pt
-                            )
-
-                            drawCircle(
-                                color = activePointColor,
-                                radius = 6.dp.toPx(),
-                                center = pt
-                            )
-                        } else {
-                            drawCircle(
-                                color = primaryColor,
-                                radius = 4.dp.toPx(),
-                                center = pt
-                            )
                         }
                     }
 
@@ -485,20 +560,23 @@ fun FuelTrendChart(
                     )
 
                     if (trendPoints.isNotEmpty()) {
-                        offsets.forEachIndexed { idx, pt ->
+                        trendPoints.forEachIndexed { idx, pt ->
+                            val xRatio = ((pt.odometerKm - xMin) / (xMax - xMin)).toFloat().coerceIn(0f, 1f)
+                            val xPos = leftMargin + xRatio * chartWidth
+
                             drawLine(
                                 color = outlineColor,
-                                start = Offset(pt.x, topMargin + chartHeight),
-                                end = Offset(pt.x, topMargin + chartHeight + 4.dp.toPx()),
+                                start = Offset(xPos, topMargin + chartHeight),
+                                end = Offset(xPos, topMargin + chartHeight + 4.dp.toPx()),
                                 strokeWidth = 1.5.dp.toPx()
                             )
 
                             val labelResult = odoTickLabels.getOrNull(idx)
                             if (labelResult != null) {
                                 val labelX = when (idx) {
-                                    0 -> pt.x
-                                    trendPoints.lastIndex -> pt.x - labelResult.size.width
-                                    else -> pt.x - labelResult.size.width / 2f
+                                    0 -> xPos
+                                    trendPoints.lastIndex -> xPos - labelResult.size.width
+                                    else -> xPos - labelResult.size.width / 2f
                                 }.coerceIn(leftMargin, size.width - rightMargin - labelResult.size.width)
 
                                 drawText(

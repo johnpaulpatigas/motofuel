@@ -146,9 +146,17 @@ class EstimationEngine(
         val recentFuelLiters = recentIntervals.sumOf { it.litersAdded }
         val recentKmLiters = if (recentFuelLiters > 0.0) recentDistanceKm / recentFuelLiters else null
 
-        // Run RLS online model sequentially
+        // Rolling Window Estimators (W = 3, 5, 8, 10)
         val observations = intervals.map { Pair(it.intervalKm ?: 0.0, it.litersAdded) }
-        val rlsStates = rlsEngine.processSequence(observations)
+        val windowSizes = listOf(3, 5, 8, 10)
+        val rollingWindowMap = windowSizes.associateWith { w ->
+            RollingWindowEstimator(w).evaluateLatest(observations)
+        }
+        val rollingWindowKmLiters = rollingWindowMap[5] ?: recentKmLiters
+
+        // Run RLS online model sequentially
+        val effectiveRlsEngine = rlsEngine
+        val rlsStates = effectiveRlsEngine.processSequence(observations)
         val finalRlsState = rlsStates.lastOrNull() ?: RlsState()
 
         val predictedKmLiters = if (finalRlsState.sampleCount > 0 && finalRlsState.theta > 0.0) {
@@ -159,14 +167,45 @@ class EstimationEngine(
             finalRlsState.marginOfError95
         } else null
 
+        // Run CUSUM sequential change detector on RLS innovation sequence
+        val cusumDetector = CusumTrendDetector(kappa = 0.75, thresholdH = 5.0)
+        var cusumState = CusumState()
+        val cusumStates = mutableListOf<CusumState>()
+
+        for (k in observations.indices) {
+            val (dist, fuel) = observations[k]
+            val priorRlsState = if (k > 0) rlsStates[k - 1] else RlsState()
+
+            val priorTheta = if (k > 0) {
+                rlsStates[k - 1].theta
+            } else if (effectiveRlsEngine.initialThetaPrior > 0.0) {
+                effectiveRlsEngine.initialThetaPrior
+            } else {
+                dist / fuel
+            }
+
+            val priorP = priorRlsState.covariance
+            val priorNeff = priorRlsState.effectiveSampleSize
+            val priorRss = priorRlsState.residualSumOfSquares
+
+            val priorVarEst = if (priorNeff > 1.0) priorRss / (priorNeff - 1.0) else 100.0
+            val innovationVar = max(1e-4, priorVarEst * (1.0 + fuel * fuel * priorP))
+            val innovationError = dist - (priorTheta * fuel)
+
+            cusumState = cusumDetector.update(cusumState, innovationError, innovationVar)
+            cusumStates.add(cusumState)
+        }
+        val finalCusumState = cusumStates.lastOrNull() ?: CusumState()
+
         // Vehicle Setup & Cost Metrics
-        val estimatedRangeKm = if (tankCapacityLiters > 0.0 && predictedKmLiters != null && predictedKmLiters > 0.0) {
-            predictedKmLiters * tankCapacityLiters
+        // Authoritative long-term cumulative estimator drives theoretical full-tank range
+        val estimatedRangeKm = if (tankCapacityLiters > 0.0 && cumulativeKmLiters != null && cumulativeKmLiters > 0.0) {
+            cumulativeKmLiters * tankCapacityLiters
         } else null
 
         val distanceSinceLastRefuelKm = intervals.lastOrNull()?.intervalKm
-        val efficiencyVsTarget = if (targetKmLiters > 0.0 && predictedKmLiters != null) {
-            predictedKmLiters - targetKmLiters
+        val efficiencyVsTarget = if (targetKmLiters > 0.0 && cumulativeKmLiters != null) {
+            cumulativeKmLiters - targetKmLiters
         } else null
 
         val costPerKm = if (totalDistanceKm > 0.0 && totalSpendCost > 0.0) {
@@ -199,6 +238,7 @@ class EstimationEngine(
         var runningDistance = 0.0
         var runningFuel = 0.0
         val trendPoints = mutableListOf<TrendPoint>()
+        val rolling5Sequence = RollingWindowEstimator(5).processSequence(observations)
 
         for (idx in intervals.indices) {
             val record = intervals[idx]
@@ -209,6 +249,7 @@ class EstimationEngine(
             runningDistance += dist
             runningFuel += fuel
             val cumulativeAtIdx = if (runningFuel > 0.0) runningDistance / runningFuel else null
+            val rollingAtIdx = rolling5Sequence.getOrNull(idx)
 
             trendPoints.add(
                 TrendPoint(
@@ -217,7 +258,8 @@ class EstimationEngine(
                     odometerKm = record.odometerKm,
                     intervalKmLiters = record.intervalKmLiters,
                     rlsPredictedKmLiters = rlsStateAtIdx?.theta,
-                    cumulativeKmLiters = cumulativeAtIdx
+                    cumulativeKmLiters = cumulativeAtIdx,
+                    rollingWindowKmLiters = rollingAtIdx
                 )
             )
         }
@@ -226,8 +268,13 @@ class EstimationEngine(
             reliability = reliability,
             cumulativeKmLiters = cumulativeKmLiters,
             recentKmLiters = recentKmLiters,
+            rollingWindowKmLiters = rollingWindowKmLiters,
+            rollingWindowMap = rollingWindowMap,
             predictedKmLiters = predictedKmLiters,
             uncertaintyMargin = uncertaintyMargin,
+            efficiencyChangeSignal = finalCusumState.signal,
+            cusumGPlus = finalCusumState.gPlus,
+            cusumGMinus = finalCusumState.gMinus,
             totalDistanceKm = totalDistanceKm,
             totalFuelConsumedLiters = totalFuelConsumed,
             totalFuelAddedLiters = totalFuelAdded,

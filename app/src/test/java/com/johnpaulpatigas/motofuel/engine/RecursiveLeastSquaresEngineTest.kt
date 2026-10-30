@@ -138,4 +138,47 @@ class RecursiveLeastSquaresEngineTest {
         // Verify that Huber attenuation prevents theta from jumping wildly toward 300 km/L
         assertTrue(stateWithOutlier.theta < thetaBeforeOutlier + 10.0)
     }
+
+    @Test
+    fun `initialization - prior based engine smoothly blends prior with initial observation`() {
+        val priorEngine = RecursiveLeastSquaresEngine(initialThetaPrior = 35.0, initialCovariancePrior = 25.0)
+        val state0 = RlsState()
+        // Sample 1: Small 1.0L partial fill with 50 km (50 km/L empirical ratio)
+        val state1 = priorEngine.update(state0, distanceKm = 50.0, litersAdded = 1.0)
+
+        // Instead of assigning 50.0 directly, theta smoothly blends between prior 35.0 and 50.0
+        assertTrue("Theta (${state1.theta}) should be between prior 35.0 and empirical 50.0", state1.theta > 35.0 && state1.theta < 50.0)
+        assertEquals(1, state1.sampleCount)
+    }
+
+    @Test
+    fun `initialization - covariance floor prevents premature covariance collapse on sample 1`() {
+        val defaultEngine = RecursiveLeastSquaresEngine()
+        val state0 = RlsState()
+        // Sample 1 with 10L refuel: 10^2 * 100 = 10000 in denominator
+        val state1 = defaultEngine.update(state0, distanceKm = 350.0, litersAdded = 10.0)
+
+        // Covariance floor ensures P1 is at least 2.5 rather than collapsing to ~0.01
+        assertTrue("Covariance (${state1.covariance}) should be floor bounded at >= 2.5", state1.covariance >= 2.5)
+    }
+
+    @Test
+    fun `decoupled robust residual variance - captures partial fill scatter accurately`() {
+        val engine = RecursiveLeastSquaresEngine()
+        val obs = listOf(
+            Pair(200.0, 5.0), // 40 km/L
+            Pair(150.0, 5.0), // 30 km/L
+            Pair(250.0, 5.0), // 50 km/L
+            Pair(180.0, 5.0)  // 36 km/L
+        )
+
+        val states = engine.processSequence(obs)
+        val finalState = states.last()
+
+        // Verify parameter theta is updated smoothly
+        assertEquals(34.0, finalState.theta, 3.0)
+        // Decoupled RSS captures non-zero residual variance producing valid positive standard error
+        assertTrue("Standard error (${finalState.standardError}) must be > 0.0", finalState.standardError > 0.5)
+        assertTrue("Margin of error (${finalState.marginOfError95}) must be > 0.0", finalState.marginOfError95 > 1.0)
+    }
 }

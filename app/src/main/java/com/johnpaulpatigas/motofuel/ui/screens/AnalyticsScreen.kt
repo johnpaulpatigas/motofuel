@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.johnpaulpatigas.motofuel.data.model.RefuelingRecord
+import com.johnpaulpatigas.motofuel.ui.components.EfficiencyChangeCard
 import com.johnpaulpatigas.motofuel.ui.components.FuelTrendChart
 import com.johnpaulpatigas.motofuel.ui.components.RefuelingHistoryList
 import com.johnpaulpatigas.motofuel.ui.theme.semanticColors
@@ -35,7 +36,7 @@ import com.johnpaulpatigas.motofuel.util.FormatUtils
 
 /**
  * Analytics and complete logs screen presenting interval records,
- * RLS interactive filter trend chart, and month-grouped refueling records.
+ * multi-estimator trends chart, CUSUM efficiency-change alerts, and month-grouped refueling records.
  *
  * Implements pure state and lambda event hoisting for previewability and testability.
  */
@@ -88,14 +89,19 @@ fun AnalyticsScreen(
         // 1. Top Section: Analytics Summary Cards
         AnalyticsSummaryRow(records = uiState.records)
 
-        // 2. Interactive Canvas Chart
+        // 2. Efficiency Change Alert Card (when CUSUM change signal is active)
+        EfficiencyChangeCard(
+            signal = uiState.estimation.efficiencyChangeSignal
+        )
+
+        // 3. Interactive Multi-Estimator Trend Canvas Chart
         FuelTrendChart(
             trendPoints = uiState.estimation.trendPoints,
             targetKmLiters = uiState.estimation.targetKmLiters,
             uncertaintyMargin = uiState.estimation.uncertaintyMargin
         )
 
-        // 3. Complete Refueling Logs List (Grouped by Month)
+        // 4. Complete Refueling Logs List (Grouped by Month)
         RefuelingHistoryList(
             records = uiState.records,
             targetKmLiters = uiState.estimation.targetKmLiters,

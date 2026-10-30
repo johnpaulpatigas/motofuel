@@ -27,13 +27,14 @@ import androidx.compose.ui.unit.dp
 import com.johnpaulpatigas.motofuel.R
 import com.johnpaulpatigas.motofuel.data.model.RefuelingRecord
 import com.johnpaulpatigas.motofuel.ui.components.DashboardHeroCard
+import com.johnpaulpatigas.motofuel.ui.components.EfficiencyChangeCard
 import com.johnpaulpatigas.motofuel.ui.components.RefuelingHistoryList
 import com.johnpaulpatigas.motofuel.ui.components.StatsSummaryGrid
 import com.johnpaulpatigas.motofuel.ui.viewmodel.FuelUiState
 
 /**
- * Overview tab content presenting top hero estimate, key metrics grid,
- * and recent refueling activity preview.
+ * Overview tab content presenting top hero estimate, CUSUM efficiency-change warnings,
+ * key metrics grid, and recent refueling activity preview.
  *
  * Implements pure state and lambda event hoisting for previewability and testability.
  */
@@ -87,6 +88,11 @@ fun OverviewScreen(
         // Hero Card
         DashboardHeroCard(
             estimation = uiState.estimation
+        )
+
+        // Efficiency Change Alert Card (displayed only when CUSUM signal is triggered)
+        EfficiencyChangeCard(
+            signal = uiState.estimation.efficiencyChangeSignal
         )
 
         // Key Metrics Grid

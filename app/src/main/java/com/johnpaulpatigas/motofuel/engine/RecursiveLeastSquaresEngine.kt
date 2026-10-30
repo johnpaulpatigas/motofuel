@@ -69,16 +69,23 @@ data class RlsState(
 
 /**
  * On-device online machine learning engine using Recursive Least Squares (RLS)
- * with exponential forgetting and robust outlier suppression.
+ * with exponential forgetting, robust Huber parameter updating, and decoupled
+ * residual variance estimation.
  *
  * Models the relationship: Distance (km) = theta * Fuel (L), where theta is km/L.
  *
  * @param forgettingFactor Exponential forgetting factor lambda (default 0.98, optimal from comparative empirical validation).
  * @param huberThreshold Standardized residual threshold for robust Huber loss gain attenuation (default 3.0).
+ * @param initialThetaPrior Optional prior fuel economy estimate (km/L). If > 0, sample 1 updates from this prior.
+ * @param initialCovariancePrior Covariance matrix scalar associated with initial prior.
+ * @param rssOutlierThreshold Standardized residual threshold for residual variance accumulation (default 5.0).
  */
 class RecursiveLeastSquaresEngine(
     val forgettingFactor: Double = 0.98,
-    private val huberThreshold: Double = 3.0
+    private val huberThreshold: Double = 3.0,
+    val initialThetaPrior: Double = 0.0,
+    val initialCovariancePrior: Double = 25.0,
+    private val rssOutlierThreshold: Double = 5.0
 ) {
     /**
      * Process a sequence of observations (interval distance km, fuel added L) sequentially from state baseline.
@@ -109,14 +116,44 @@ class RecursiveLeastSquaresEngine(
 
         // Handle initial observation explicitly
         if (state.sampleCount == 0 || state.theta <= 0.0) {
-            val initialP = state.covariance / (forgettingFactor + x * x * state.covariance)
-            return RlsState(
-                theta = empiricalRatio,
-                covariance = if (initialP.isNaN() || initialP.isInfinite()) 10.0 else initialP,
-                sampleCount = 1,
-                residualSumOfSquares = 0.0,
-                effectiveSampleSize = 1.0
-            )
+            if (initialThetaPrior > 0.0 && state.sampleCount == 0) {
+                // Prior-based initialization on sample 1: update from initialThetaPrior
+                val priorTheta = initialThetaPrior
+                val priorP = initialCovariancePrior
+                val prediction = priorTheta * x
+                val rawError = y - prediction
+
+                val denominator = forgettingFactor + (x * x * priorP)
+                val gain = if (denominator > 1e-12) (priorP * x) / denominator else 0.0
+
+                var updatedTheta = priorTheta + (gain * rawError)
+                var updatedP = (1.0 / forgettingFactor) * (1.0 - gain * x) * priorP
+
+                if (updatedTheta <= 0.0 || updatedTheta.isNaN() || updatedTheta.isInfinite()) updatedTheta = priorTheta
+                if (updatedP < 1e-6 || updatedP.isNaN() || updatedP.isInfinite()) updatedP = 1e-3
+
+                val postGainFactor = max(0.0, 1.0 - gain * x)
+                val newRss = postGainFactor * rawError * rawError
+
+                return RlsState(
+                    theta = updatedTheta,
+                    covariance = updatedP,
+                    sampleCount = 1,
+                    residualSumOfSquares = newRss,
+                    effectiveSampleSize = 1.0
+                )
+            } else {
+                // Direct initial observation assignment with covariance floor to prevent premature lock-in
+                val rawP = state.covariance / (forgettingFactor + x * x * state.covariance)
+                val initialP = if (rawP.isNaN() || rawP.isInfinite()) 10.0 else max(2.5, rawP)
+                return RlsState(
+                    theta = empiricalRatio,
+                    covariance = initialP,
+                    sampleCount = 1,
+                    residualSumOfSquares = 0.0,
+                    effectiveSampleSize = 1.0
+                )
+            }
         }
 
         val priorTheta = state.theta
@@ -128,15 +165,25 @@ class RecursiveLeastSquaresEngine(
         val prediction = priorTheta * x
         val rawError = y - prediction
 
-        // Robust outlier suppression via standardized residual thresholding
+        // Standardized residual calculation based on prior innovation variance
         val priorVarianceEstimate = if (priorNeff > 1.0) priorRss / (priorNeff - 1.0) else 100.0
         val predVariance = max(1e-6, priorVarianceEstimate * (1.0 + x * x * priorP))
         val predStdDev = sqrt(predVariance)
-
         val standardizedResidual = if (predStdDev > 0.0) abs(rawError) / predStdDev else 0.0
-        val error = if (standardizedResidual > huberThreshold && state.sampleCount >= 2) {
+
+        // Robust Huber loss gain attenuation for parameter theta update
+        val errorForTheta = if (standardizedResidual > huberThreshold && state.sampleCount >= 2) {
             val huberWeight = huberThreshold / standardizedResidual
             rawError * huberWeight
+        } else {
+            rawError
+        }
+
+        // Decoupled residual calculation for variance (RSS) estimation
+        // Allows untruncated partial-fill residual scatter up to 5.0 sigma while rejecting multi-sigma typos
+        val errorForRss = if (standardizedResidual > rssOutlierThreshold && state.sampleCount >= 2) {
+            val rssWeight = rssOutlierThreshold / standardizedResidual
+            rawError * rssWeight
         } else {
             rawError
         }
@@ -149,7 +196,7 @@ class RecursiveLeastSquaresEngine(
         val gain = (priorP * x) / denominator
 
         // Parameter theta update and covariance P update
-        var updatedTheta = priorTheta + (gain * error)
+        var updatedTheta = priorTheta + (gain * errorForTheta)
         var updatedP = (1.0 / forgettingFactor) * (1.0 - gain * x) * priorP
 
         // Numerical stability guards
@@ -163,9 +210,9 @@ class RecursiveLeastSquaresEngine(
         val newSampleCount = state.sampleCount + 1
         val newNeff = (forgettingFactor * priorNeff) + 1.0
 
-        // Exponentially discounted Residual Sum of Squares (RSS)
+        // Decoupled exponentially discounted Residual Sum of Squares (RSS)
         val postGainFactor = max(0.0, 1.0 - gain * x)
-        val newRss = (forgettingFactor * priorRss) + (postGainFactor * error * error)
+        val newRss = (forgettingFactor * priorRss) + (postGainFactor * errorForRss * errorForRss)
 
         return RlsState(
             theta = updatedTheta,

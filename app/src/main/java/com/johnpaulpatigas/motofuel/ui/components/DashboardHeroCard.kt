@@ -3,7 +3,6 @@ package com.johnpaulpatigas.motofuel.ui.components
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
@@ -45,6 +43,11 @@ import com.johnpaulpatigas.motofuel.data.model.ReliabilityLevel
 import com.johnpaulpatigas.motofuel.ui.theme.semanticColors
 import kotlin.math.roundToInt
 
+/**
+ * Overview hero card displaying authoritative overall fuel economy,
+ * separate indicators for recent fuel economy and RLS efficiency trend,
+ * and statistical confidence status.
+ */
 @Composable
 fun DashboardHeroCard(
     estimation: EstimationResult,
@@ -52,15 +55,17 @@ fun DashboardHeroCard(
 ) {
     var showInfoDialog by remember { mutableStateOf(false) }
 
-    val predicted = estimation.predictedKmLiters
+    val overall = estimation.cumulativeKmLiters
+    val recent = estimation.recentKmLiters
+    val trend = estimation.predictedKmLiters
     val target = estimation.targetKmLiters
     val uncertainty = estimation.uncertaintyMargin
     val diff = estimation.efficiencyVsTarget
 
-    val animatedValue by animateFloatAsState(
-        targetValue = (predicted ?: 0.0).toFloat(),
+    val animatedOverall by animateFloatAsState(
+        targetValue = (overall ?: 0.0).toFloat(),
         animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing),
-        label = "HeroValueAnimation"
+        label = "HeroOverallAnimation"
     )
 
     Card(
@@ -93,7 +98,7 @@ fun DashboardHeroCard(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Speed,
-                                contentDescription = "Fuel Economy",
+                                contentDescription = "Overall Fuel Economy",
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -101,7 +106,7 @@ fun DashboardHeroCard(
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "ESTIMATED FUEL ECONOMY",
+                        text = "OVERALL FUEL ECONOMY",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -117,14 +122,14 @@ fun DashboardHeroCard(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // Main Display: Big Expressive Number, Unit & Uncertainty
-            if (predicted != null && estimation.reliability != ReliabilityLevel.INSUFFICIENT_DATA) {
+            // Main Display: Authoritative Overall Cumulative Fuel Economy
+            if (overall != null && estimation.reliability != ReliabilityLevel.INSUFFICIENT_DATA) {
                 Row(
                     verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.Start
                 ) {
                     Text(
-                        text = formatOneDecimal(animatedValue.toDouble()),
+                        text = formatOneDecimal(animatedOverall.toDouble()),
                         style = MaterialTheme.typography.displayLarge,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.onSurface
@@ -157,11 +162,35 @@ fun DashboardHeroCard(
                     }
                 }
 
-                // Progress Bar vs Goal
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Separate indicators for Recent Fuel Economy & Efficiency Trend
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (recent != null) {
+                        IndicatorPill(
+                            label = "Recent",
+                            value = "${formatOneDecimal(recent)} km/L",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    if (trend != null) {
+                        IndicatorPill(
+                            label = "Trend",
+                            value = "${formatOneDecimal(trend)} km/L",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                // Progress Bar vs Goal Target
                 if (target > 0.0) {
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    val progressRatio = (predicted / target).coerceIn(0.0, 1.2).toFloat() / 1.2f
+                    val progressRatio = (overall / target).coerceIn(0.0, 1.2).toFloat() / 1.2f
                     val isGood = diff != null && diff >= 0.0
                     val isNear = diff != null && diff >= -2.0 && diff < 0.0
 
@@ -275,6 +304,38 @@ fun DashboardHeroCard(
 
     if (showInfoDialog) {
         AssumptionsInfoDialog(onDismiss = { showInfoDialog = false })
+    }
+}
+
+@Composable
+private fun IndicatorPill(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }
 

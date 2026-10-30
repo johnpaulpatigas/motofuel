@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsBike
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.AvTimer
 import androidx.compose.material.icons.filled.Functions
 import androidx.compose.material.icons.filled.LocalGasStation
@@ -86,13 +87,13 @@ fun StatsSummaryGrid(
             }
         }
 
-        // Row 2: Recent Avg & Cumulative Avg
+        // Row 2: Recent Fuel Economy & Overall Fuel Economy
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             SparklineStatCard(
-                title = "Recent Avg",
+                title = "Recent Fuel Economy",
                 value = estimation.recentKmLiters?.let { "${formatOneDecimal(it)} km/L" } ?: "---",
                 subtitle = "Last 3 refuels",
                 trendPoints = estimation.trendPoints,
@@ -100,7 +101,7 @@ fun StatsSummaryGrid(
             )
 
             StatCard(
-                title = "Cumulative Avg",
+                title = "Overall Fuel Economy",
                 value = estimation.cumulativeKmLiters?.let { "${formatOneDecimal(it)} km/L" } ?: "---",
                 subtitle = "${estimation.intervalCount} intervals",
                 icon = Icons.Default.Functions,
@@ -108,24 +109,24 @@ fun StatsSummaryGrid(
             )
         }
 
-        // Row 3: Total Distance & Fuel Consumed
+        // Row 3: Efficiency Trend & Total Distance
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             StatCard(
-                title = "Total Distance",
-                value = "${formatOneDecimal(estimation.totalDistanceKm)} km",
-                subtitle = "Since baseline",
-                icon = Icons.Default.Route,
+                title = "Efficiency Trend",
+                value = estimation.predictedKmLiters?.let { "${formatOneDecimal(it)} km/L" } ?: "---",
+                subtitle = "RLS filter estimate",
+                icon = Icons.AutoMirrored.Filled.ShowChart,
                 modifier = Modifier.weight(1f)
             )
 
             StatCard(
-                title = "Fuel Consumed",
-                value = "${formatOneDecimal(estimation.totalFuelConsumedLiters)} L",
-                subtitle = "Excl. baseline fill",
-                icon = Icons.Default.LocalGasStation,
+                title = "Total Distance",
+                value = "${formatOneDecimal(estimation.totalDistanceKm)} km",
+                subtitle = "Since baseline",
+                icon = Icons.Default.Route,
                 modifier = Modifier.weight(1f)
             )
         }
