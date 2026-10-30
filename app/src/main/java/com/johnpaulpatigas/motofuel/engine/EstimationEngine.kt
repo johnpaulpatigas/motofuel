@@ -229,9 +229,7 @@ class EstimationEngine(
             reliability = reliability,
             intervalCount = intervals.size,
             totalDistanceKm = totalDistanceKm,
-            uncertaintyMargin = uncertaintyMargin,
-            cumulativeKmLiters = cumulativeKmLiters,
-            predictedKmLiters = predictedKmLiters
+            uncertaintyMargin = uncertaintyMargin
         )
 
         // Build trend points for UI charts
@@ -333,9 +331,7 @@ class EstimationEngine(
         reliability: ReliabilityLevel,
         intervalCount: Int,
         totalDistanceKm: Double,
-        uncertaintyMargin: Double?,
-        cumulativeKmLiters: Double?,
-        predictedKmLiters: Double?
+        uncertaintyMargin: Double?
     ): String {
         val distStr = formatKm(totalDistanceKm)
         val marginStr = uncertaintyMargin?.let { " (±${formatOneDecimal(it)} km/L)" } ?: ""
@@ -348,10 +344,10 @@ class EstimationEngine(
                 "Low statistical confidence based on $intervalCount interval ($distStr km recorded). Add more refueling logs to reduce partial-tank inventory noise."
             }
             ReliabilityLevel.MEDIUM -> {
-                "Medium confidence based on $intervalCount intervals across $distStr km$marginStr. Recursive Least Squares engine active."
+                "Medium confidence based on $intervalCount intervals across $distStr km$marginStr."
             }
             ReliabilityLevel.HIGH -> {
-                "High confidence based on $intervalCount intervals across $distStr km$marginStr. Prediction demonstrates low parameter variance and high convergence stability."
+                "High confidence based on $intervalCount intervals across $distStr km$marginStr."
             }
         }
     }

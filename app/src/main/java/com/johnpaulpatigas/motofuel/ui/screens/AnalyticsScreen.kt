@@ -35,10 +35,8 @@ import com.johnpaulpatigas.motofuel.ui.viewmodel.FuelUiState
 import com.johnpaulpatigas.motofuel.util.FormatUtils
 
 /**
- * Analytics and complete logs screen presenting interval records,
- * multi-estimator trends chart, CUSUM efficiency-change alerts, and month-grouped refueling records.
- *
- * Implements pure state and lambda event hoisting for previewability and testability.
+ * Analytics and complete logs screen presenting fuel economy trend,
+ * CUSUM efficiency-change alerts, interval extremes, and month-grouped refueling records.
  */
 @Composable
 fun AnalyticsScreen(
@@ -87,18 +85,20 @@ fun AnalyticsScreen(
         }
 
         // 1. Top Section: Analytics Summary Cards
-        AnalyticsSummaryRow(records = uiState.records)
+        AnalyticsSummaryRow(
+            records = uiState.records,
+            cumulativeKmLiters = uiState.estimation.cumulativeKmLiters
+        )
 
         // 2. Efficiency Change Alert Card (when CUSUM change signal is active)
         EfficiencyChangeCard(
             signal = uiState.estimation.efficiencyChangeSignal
         )
 
-        // 3. Interactive Multi-Estimator Trend Canvas Chart
+        // 3. Fuel Economy Trend Line Chart
         FuelTrendChart(
             trendPoints = uiState.estimation.trendPoints,
-            targetKmLiters = uiState.estimation.targetKmLiters,
-            uncertaintyMargin = uiState.estimation.uncertaintyMargin
+            targetKmLiters = uiState.estimation.targetKmLiters
         )
 
         // 4. Complete Refueling Logs List (Grouped by Month)
@@ -114,17 +114,19 @@ fun AnalyticsScreen(
 }
 
 @Composable
-private fun AnalyticsSummaryRow(records: List<RefuelingRecord>) {
+private fun AnalyticsSummaryRow(
+    records: List<RefuelingRecord>,
+    cumulativeKmLiters: Double?
+) {
     val intervals = androidx.compose.runtime.remember(records) {
         records.mapNotNull { it.intervalKmLiters }
     }
     if (intervals.isEmpty()) return
 
-    val (best, worst, avg) = androidx.compose.runtime.remember(intervals) {
-        Triple(
+    val (best, worst) = androidx.compose.runtime.remember(intervals) {
+        Pair(
             intervals.maxOrNull() ?: 0.0,
-            intervals.minOrNull() ?: 0.0,
-            intervals.average()
+            intervals.minOrNull() ?: 0.0
         )
     }
 
@@ -139,8 +141,8 @@ private fun AnalyticsSummaryRow(records: List<RefuelingRecord>) {
             modifier = Modifier.weight(1f)
         )
         SummaryMetricCard(
-            label = "AVG INTERVAL",
-            value = "${FormatUtils.formatOneDecimal(avg)} km/L",
+            label = "FUEL ECONOMY",
+            value = cumulativeKmLiters?.let { "${FormatUtils.formatOneDecimal(it)} km/L" } ?: "---",
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.weight(1f)
         )

@@ -44,9 +44,8 @@ import com.johnpaulpatigas.motofuel.ui.theme.semanticColors
 import kotlin.math.roundToInt
 
 /**
- * Overview hero card displaying authoritative overall fuel economy,
- * separate indicators for recent fuel economy and RLS efficiency trend,
- * and statistical confidence status.
+ * Hero card prominently displaying the motorcycle's single authoritative fuel economy (km/L)
+ * and target progress with statistical confidence status.
  */
 @Composable
 fun DashboardHeroCard(
@@ -56,8 +55,6 @@ fun DashboardHeroCard(
     var showInfoDialog by remember { mutableStateOf(false) }
 
     val overall = estimation.cumulativeKmLiters
-    val recent = estimation.recentKmLiters
-    val trend = estimation.predictedKmLiters
     val target = estimation.targetKmLiters
     val uncertainty = estimation.uncertaintyMargin
     val diff = estimation.efficiencyVsTarget
@@ -98,7 +95,7 @@ fun DashboardHeroCard(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Speed,
-                                contentDescription = "Overall Fuel Economy",
+                                contentDescription = "Fuel Economy",
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -106,7 +103,7 @@ fun DashboardHeroCard(
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "OVERALL FUEL ECONOMY",
+                        text = "FUEL ECONOMY",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -122,7 +119,7 @@ fun DashboardHeroCard(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // Main Display: Authoritative Overall Cumulative Fuel Economy
+            // Main Display: Authoritative Cumulative Fuel Economy
             if (overall != null && estimation.reliability != ReliabilityLevel.INSUFFICIENT_DATA) {
                 Row(
                     verticalAlignment = Alignment.Bottom,
@@ -159,30 +156,6 @@ fun DashboardHeroCard(
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Separate indicators for Recent Fuel Economy & Efficiency Trend
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    if (recent != null) {
-                        IndicatorPill(
-                            label = "Recent",
-                            value = "${formatOneDecimal(recent)} km/L",
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    if (trend != null) {
-                        IndicatorPill(
-                            label = "Trend",
-                            value = "${formatOneDecimal(trend)} km/L",
-                            modifier = Modifier.weight(1f)
-                        )
                     }
                 }
 
@@ -304,38 +277,6 @@ fun DashboardHeroCard(
 
     if (showInfoDialog) {
         AssumptionsInfoDialog(onDismiss = { showInfoDialog = false })
-    }
-}
-
-@Composable
-private fun IndicatorPill(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-        modifier = modifier
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold
-            )
-        }
     }
 }
 

@@ -20,8 +20,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -35,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
@@ -53,26 +50,19 @@ import com.johnpaulpatigas.motofuel.ui.theme.semanticColors
 import com.johnpaulpatigas.motofuel.util.FormatUtils
 import kotlin.math.abs
 
-enum class TrendChartMode(val label: String) {
-    RLS_ADAPTIVE("RLS Trend"),
-    ROLLING_WINDOW("Rolling W=5"),
-    CUMULATIVE("Cumulative"),
-    COMPARE_ALL("Compare All")
-}
-
+/**
+ * Fuel economy trend line chart displaying historical cumulative fuel economy progression.
+ */
 @Composable
 fun FuelTrendChart(
     trendPoints: List<TrendPoint>,
     targetKmLiters: Double = 0.0,
-    uncertaintyMargin: Double? = null,
     modifier: Modifier = Modifier
 ) {
     val haptic = LocalHapticFeedback.current
     val typography = MaterialTheme.typography
     val colorScheme = MaterialTheme.colorScheme
     val textMeasurer = rememberTextMeasurer()
-
-    var selectedChartMode by remember { mutableStateOf(TrendChartMode.RLS_ADAPTIVE) }
 
     val animatedProgress by animateFloatAsState(
         targetValue = 1f,
@@ -127,7 +117,7 @@ fun FuelTrendChart(
                         Box(modifier = Modifier.padding(6.dp), contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ShowChart,
-                                contentDescription = "Fuel Trend",
+                                contentDescription = "Fuel Economy Trend",
                                 tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -135,36 +125,9 @@ fun FuelTrendChart(
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "Fuel Economy Trends",
+                        text = "Fuel Economy Trend",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Chart Mode Selector Filter Chips
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                TrendChartMode.entries.forEach { mode ->
-                    val isSelected = selectedChartMode == mode
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { selectedChartMode = mode },
-                        label = {
-                            Text(
-                                text = mode.label,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                            )
-                        },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
                     )
                 }
             }
@@ -179,29 +142,19 @@ fun FuelTrendChart(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Add at least 2 refueling logs to view line chart trend.",
+                        text = "Add at least 2 refueling logs to view fuel economy trend.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             } else {
                 val primaryColor = MaterialTheme.colorScheme.primary
-                val tertiaryColor = MaterialTheme.colorScheme.tertiary
-                val secondaryColor = MaterialTheme.colorScheme.secondary
                 val outlineColor = MaterialTheme.colorScheme.outlineVariant
                 val gridLineColor = MaterialTheme.colorScheme.outlineVariant
                 val activePointColor = MaterialTheme.colorScheme.error
                 val targetLineColor = MaterialTheme.semanticColors.good
 
-                // Collect values based on mode
-                val allValues = trendPoints.flatMap { pt ->
-                    listOfNotNull(
-                        pt.rlsPredictedKmLiters,
-                        pt.rollingWindowKmLiters,
-                        pt.cumulativeKmLiters,
-                        pt.intervalKmLiters
-                    )
-                }
+                val allValues = trendPoints.mapNotNull { it.cumulativeKmLiters }
 
                 val rawMinOdo = trendPoints.minOf { it.odometerKm }
                 val rawMaxOdo = trendPoints.maxOf { it.odometerKm }
@@ -241,44 +194,12 @@ fun FuelTrendChart(
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
-                                currentPoint.intervalKmLiters?.let { raw ->
-                                    Text(
-                                        text = "Interval: ${FormatUtils.formatOneDecimal(raw)} km/L",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
                                 currentPoint.cumulativeKmLiters?.let { cum ->
                                     Text(
-                                        text = "Overall: ${FormatUtils.formatOneDecimal(cum)} km/L",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = secondaryColor,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                                currentPoint.rollingWindowKmLiters?.let { roll ->
-                                    Text(
-                                        text = "Rolling (W=5): ${FormatUtils.formatOneDecimal(roll)} km/L",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = tertiaryColor,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                                currentPoint.rlsPredictedKmLiters?.let { rls ->
-                                    Text(
-                                        text = "RLS: ${FormatUtils.formatOneDecimal(rls)} km/L",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = primaryColor,
-                                        fontWeight = FontWeight.Bold
+                                        text = "Fuel Economy: ${FormatUtils.formatOneDecimal(cum)} km/L",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = primaryColor
                                     )
                                 }
                             }
@@ -431,94 +352,51 @@ fun FuelTrendChart(
                         )
                     }
 
-                    // Helper to compute screen points for any series
-                    fun computeSeriesOffsets(seriesExtractor: (TrendPoint) -> Double?): List<Offset?> {
-                        return trendPoints.map { pt ->
-                            val valItem = seriesExtractor(pt) ?: return@map null
-                            val xRatio = ((pt.odometerKm - xMin) / (xMax - xMin)).toFloat().coerceIn(0f, 1f)
-                            val yRatio = ((valItem - yMin) / (yMax - yMin)).toFloat().coerceIn(0f, 1f)
-                            Offset(leftMargin + xRatio * chartWidth, topMargin + chartHeight * (1f - yRatio))
-                        }
+                    // 4. Authoritative Cumulative Fuel Economy Series Line
+                    val cumulativeOffsets = trendPoints.map { pt ->
+                        val valItem = pt.cumulativeKmLiters ?: return@map null
+                        val xRatio = ((pt.odometerKm - xMin) / (xMax - xMin)).toFloat().coerceIn(0f, 1f)
+                        val yRatio = ((valItem - yMin) / (yMax - yMin)).toFloat().coerceIn(0f, 1f)
+                        Offset(leftMargin + xRatio * chartWidth, topMargin + chartHeight * (1f - yRatio))
                     }
 
-                    // Draw a series line on Canvas
-                    fun drawSeriesLine(offsets: List<Offset?>, color: Color, strokeWidthDp: Float = 2.5f) {
-                        val validOffsets = offsets.filterNotNull()
-                        if (validOffsets.size >= 2) {
-                            val visibleCount = (validOffsets.size * animatedProgress).toInt().coerceIn(2, validOffsets.size)
-                            val visible = validOffsets.take(visibleCount)
+                    val validOffsets = cumulativeOffsets.filterNotNull()
+                    if (validOffsets.size >= 2) {
+                        val visibleCount = (validOffsets.size * animatedProgress).toInt().coerceIn(2, validOffsets.size)
+                        val visible = validOffsets.take(visibleCount)
 
-                            cachedLinePath.reset()
-                            cachedLinePath.moveTo(visible[0].x, visible[0].y)
-                            for (i in 1 until visible.size) {
-                                cachedLinePath.lineTo(visible[i].x, visible[i].y)
-                            }
+                        // Draw Gradient Area Under Line
+                        cachedFillPath.reset()
+                        cachedFillPath.moveTo(visible[0].x, topMargin + chartHeight)
+                        visible.forEach { cachedFillPath.lineTo(it.x, it.y) }
+                        cachedFillPath.lineTo(visible.last().x, topMargin + chartHeight)
+                        cachedFillPath.close()
 
-                            drawPath(
-                                path = cachedLinePath,
-                                color = color,
-                                style = Stroke(width = strokeWidthDp.dp.toPx(), cap = StrokeCap.Round)
+                        drawPath(
+                            path = cachedFillPath,
+                            brush = Brush.verticalGradient(
+                                colors = listOf(primaryColor.copy(alpha = 0.22f), primaryColor.copy(alpha = 0.02f)),
+                                startY = topMargin,
+                                endY = topMargin + chartHeight
                             )
-                        }
-                    }
+                        )
 
-                    // Draw gradient fill under primary series
-                    fun drawSeriesGradient(offsets: List<Offset?>, color: Color) {
-                        val validOffsets = offsets.filterNotNull()
-                        if (validOffsets.size >= 2) {
-                            val visibleCount = (validOffsets.size * animatedProgress).toInt().coerceIn(2, validOffsets.size)
-                            val visible = validOffsets.take(visibleCount)
+                        // Draw Cumulative Line
+                        cachedLinePath.reset()
+                        cachedLinePath.moveTo(visible[0].x, visible[0].y)
+                        for (i in 1 until visible.size) {
+                            cachedLinePath.lineTo(visible[i].x, visible[i].y)
+                        }
 
-                            cachedFillPath.reset()
-                            cachedFillPath.moveTo(visible[0].x, topMargin + chartHeight)
-                            visible.forEach { cachedFillPath.lineTo(it.x, it.y) }
-                            cachedFillPath.lineTo(visible.last().x, topMargin + chartHeight)
-                            cachedFillPath.close()
-
-                            drawPath(
-                                path = cachedFillPath,
-                                brush = Brush.verticalGradient(
-                                    colors = listOf(color.copy(alpha = 0.22f), color.copy(alpha = 0.02f)),
-                                    startY = topMargin,
-                                    endY = topMargin + chartHeight
-                                )
-                            )
-                        }
-                    }
-
-                    val rlsOffsets = computeSeriesOffsets { it.rlsPredictedKmLiters }
-                    val rollingOffsets = computeSeriesOffsets { it.rollingWindowKmLiters }
-                    val cumulativeOffsets = computeSeriesOffsets { it.cumulativeKmLiters }
-
-                    when (selectedChartMode) {
-                        TrendChartMode.RLS_ADAPTIVE -> {
-                            drawSeriesGradient(rlsOffsets, primaryColor)
-                            drawSeriesLine(rlsOffsets, primaryColor, 3f)
-                        }
-                        TrendChartMode.ROLLING_WINDOW -> {
-                            drawSeriesGradient(rollingOffsets, tertiaryColor)
-                            drawSeriesLine(rollingOffsets, tertiaryColor, 3f)
-                        }
-                        TrendChartMode.CUMULATIVE -> {
-                            drawSeriesGradient(cumulativeOffsets, secondaryColor)
-                            drawSeriesLine(cumulativeOffsets, secondaryColor, 3f)
-                        }
-                        TrendChartMode.COMPARE_ALL -> {
-                            drawSeriesLine(cumulativeOffsets, secondaryColor, 2f)
-                            drawSeriesLine(rollingOffsets, tertiaryColor, 2f)
-                            drawSeriesLine(rlsOffsets, primaryColor, 3f)
-                        }
+                        drawPath(
+                            path = cachedLinePath,
+                            color = primaryColor,
+                            style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
+                        )
                     }
 
                     // Selected Point Guideline & Highlights
-                    val activeOffsets = when (selectedChartMode) {
-                        TrendChartMode.RLS_ADAPTIVE -> rlsOffsets
-                        TrendChartMode.ROLLING_WINDOW -> rollingOffsets
-                        TrendChartMode.CUMULATIVE -> cumulativeOffsets
-                        TrendChartMode.COMPARE_ALL -> rlsOffsets
-                    }
-
-                    activeOffsets.forEachIndexed { idx, pt ->
+                    cumulativeOffsets.forEachIndexed { idx, pt ->
                         if (pt != null) {
                             val isSelected = idx == selectedIndex
                             if (isSelected) {
