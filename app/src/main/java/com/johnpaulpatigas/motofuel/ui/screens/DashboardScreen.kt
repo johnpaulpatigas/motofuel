@@ -1,7 +1,6 @@
 package com.johnpaulpatigas.motofuel.ui.screens
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
@@ -9,8 +8,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -67,10 +69,19 @@ fun DashboardScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
 
+    val pagerState = rememberPagerState(pageCount = { 3 }, initialPage = selectedTab)
+    val coroutineScope = rememberCoroutineScope()
+
     LaunchedEffect(uiState.userMessage) {
         uiState.userMessage?.let { message ->
             snackbarHostState.showSnackbar(message)
             viewModel.dismissUserMessage()
+        }
+    }
+
+    LaunchedEffect(pagerState.settledPage) {
+        if (selectedTab != pagerState.settledPage) {
+            selectedTab = pagerState.settledPage
         }
     }
 
@@ -82,7 +93,10 @@ fun DashboardScreen(
             uiState.recordToEdit != null -> viewModel.closeEditDialog()
             uiState.recordToDelete != null -> viewModel.closeDeleteDialog()
             uiState.isClearAllDialogOpen -> viewModel.closeClearAllDialog()
-            selectedTab != 0 -> selectedTab = 0
+            selectedTab != 0 -> {
+                selectedTab = 0
+                coroutineScope.launch { pagerState.animateScrollToPage(0) }
+            }
         }
     }
 
@@ -97,18 +111,19 @@ fun DashboardScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Animated Tab Transition for smooth feel
-            AnimatedContent(
-                targetState = selectedTab,
-                transitionSpec = {
-                    fadeIn(tween(220)) togetherWith fadeOut(tween(180))
-                },
-                label = "TabContentTransition"
-            ) { targetTab ->
-                when (targetTab) {
+            // Horizontal Pager for swipe gesture navigation between tabs
+            HorizontalPager(
+                state = pagerState,
+                beyondViewportPageCount = 1,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                when (page) {
                     0 -> OverviewScreen(
                         uiState = uiState,
-                        onNavigateToLogs = { selectedTab = 1 },
+                        onNavigateToLogs = { 
+                            selectedTab = 1
+                            coroutineScope.launch { pagerState.animateScrollToPage(1) }
+                        },
                         onEditRecord = { record -> viewModel.openEditDialog(record) },
                         onDeleteRecord = { record -> viewModel.openDeleteDialog(record) }
                     )
@@ -166,7 +181,10 @@ fun DashboardScreen(
                                 val inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant
 
                                 Surface(
-                                    onClick = { selectedTab = index },
+                                    onClick = { 
+                                        selectedTab = index 
+                                        coroutineScope.launch { pagerState.animateScrollToPage(index) }
+                                    },
                                     shape = CircleShape,
                                     color = if (isSelected) activeContainerColor else Color.Transparent,
                                     modifier = Modifier.height(42.dp)
