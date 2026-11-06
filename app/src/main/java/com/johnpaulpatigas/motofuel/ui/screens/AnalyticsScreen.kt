@@ -105,6 +105,7 @@ fun AnalyticsScreen(
         RefuelingHistoryList(
             records = uiState.records,
             targetKmLiters = uiState.estimation.targetKmLiters,
+            currencySymbol = uiState.estimation.currencySymbol,
             onEditClick = onEditRecord,
             onDeleteClick = onDeleteRecord
         )

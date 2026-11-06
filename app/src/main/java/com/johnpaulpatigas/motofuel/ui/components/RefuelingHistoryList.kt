@@ -18,6 +18,8 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LocalGasStation
@@ -56,8 +58,11 @@ fun RefuelingHistoryList(
     onDeleteClick: (RefuelingRecord) -> Unit,
     modifier: Modifier = Modifier,
     maxItems: Int? = null,
-    targetKmLiters: Double = 0.0
+    targetKmLiters: Double = 0.0,
+    currencySymbol: String = "₱"
 ) {
+    var expandedMonths by remember { mutableStateOf(setOf<String>()) }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -160,25 +165,72 @@ fun RefuelingHistoryList(
 
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     groupedRecords.forEach { (monthHeader, monthRecords) ->
+                        val isExpanded = expandedMonths.contains(monthHeader)
+                        val displayMonthRecords = if (isExpanded || monthRecords.size <= 5) monthRecords else monthRecords.take(5)
+                        val totalMonthCost = monthRecords.sumOf { it.totalCost ?: 0.0 }
+                        val totalMonthDistance = monthRecords.sumOf { it.intervalKm ?: 0.0 }
+
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            // Month Section Header
+                            // Month Section Header with Distance, Cost, and Expand/Collapse Chevron
                             Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 2.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 2.dp)
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.CalendarToday,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = monthHeader.uppercase(),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.CalendarToday,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = monthHeader.uppercase(),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    val costText = if (totalMonthCost > 0.0) "$currencySymbol${FormatUtils.formatOneDecimal(totalMonthCost)}" else null
+                                    val distText = if (totalMonthDistance > 0.0) "${FormatUtils.formatKm(totalMonthDistance)} km" else null
+                                    val summaryText = listOfNotNull(distText, costText).joinToString(" • ")
+
+                                    if (summaryText.isNotEmpty()) {
+                                        Text(
+                                            text = summaryText,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+
+                                    if (monthRecords.size > 5) {
+                                        IconButton(
+                                            onClick = {
+                                                expandedMonths = if (isExpanded) {
+                                                    expandedMonths - monthHeader
+                                                } else {
+                                                    expandedMonths + monthHeader
+                                                }
+                                            },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                                contentDescription = if (isExpanded) "Collapse" else "Show all ${monthRecords.size} logs",
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                    }
+                                }
                             }
 
                             Card(
@@ -190,7 +242,7 @@ fun RefuelingHistoryList(
                                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                             ) {
                                 Column {
-                                    monthRecords.forEachIndexed { index, record ->
+                                    displayMonthRecords.forEachIndexed { index, record ->
                                         androidx.compose.runtime.key(record.id) {
                                             CompactHistoryRow(
                                                 record = record,
@@ -198,7 +250,7 @@ fun RefuelingHistoryList(
                                                 onEditClick = onEditClick,
                                                 onDeleteClick = onDeleteClick
                                             )
-                                            if (index < monthRecords.lastIndex) {
+                                            if (index < displayMonthRecords.lastIndex) {
                                                 HorizontalDivider(
                                                     modifier = Modifier.padding(horizontal = 14.dp),
                                                     color = MaterialTheme.colorScheme.outlineVariant
