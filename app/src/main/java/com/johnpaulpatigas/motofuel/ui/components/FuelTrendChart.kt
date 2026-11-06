@@ -1,8 +1,12 @@
 package com.johnpaulpatigas.motofuel.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -162,51 +166,66 @@ fun FuelTrendChart(
                 val minVal = allValues.minOrNull() ?: 10.0
                 val maxVal = allValues.maxOrNull() ?: 50.0
 
-                val overallMin = minOf(minVal, if (targetKmLiters > 0) targetKmLiters else minVal)
-                val overallMax = maxOf(maxVal, if (targetKmLiters > 0) targetKmLiters else maxVal)
-
-                val yMin = (overallMin * 0.85).coerceAtLeast(0.0)
-                val yMax = (overallMax * 1.15).coerceAtLeast(yMin + 5.0)
+                val yMin = minVal.coerceAtLeast(0.0)
+                val yMax = if (maxVal == minVal) maxVal + 10.0 else maxVal
                 val xMin = rawMinOdo
                 val xMax = if (rawMaxOdo == rawMinOdo) rawMaxOdo + 10.0 else rawMaxOdo
 
                 // Selected Point Tooltip / Summary
                 val currentPoint = selectedIndex?.let { trendPoints.getOrNull(it) }
-                if (currentPoint != null) {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.small,
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                AnimatedVisibility(
+                    visible = currentPoint != null,
+                    enter = fadeIn(tween(150)),
+                    exit = fadeOut(tween(100))
+                ) {
+                    if (currentPoint != null) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.medium,
+                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                         ) {
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 10.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = "Odometer: ${FormatUtils.formatKm(currentPoint.odometerKm)} km",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                currentPoint.cumulativeKmLiters?.let { cum ->
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ShowChart,
+                                        contentDescription = null,
+                                        tint = primaryColor,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = "Fuel Economy: ${FormatUtils.formatOneDecimal(cum)} km/L",
+                                        text = "${FormatUtils.formatKm(currentPoint.odometerKm)} km",
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold,
-                                        color = primaryColor
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
+                                }
+                                currentPoint.cumulativeKmLiters?.let { cum ->
+                                    Surface(
+                                        shape = MaterialTheme.shapes.extraSmall,
+                                        color = primaryColor.copy(alpha = 0.15f)
+                                    ) {
+                                        Text(
+                                            text = "${FormatUtils.formatOneDecimal(cum)} km/L",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = primaryColor,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(18.dp))
+                    }
                 }
 
                 val gridDashPathEffect = remember { PathEffect.dashPathEffect(floatArrayOf(8f, 8f), 0f) }
