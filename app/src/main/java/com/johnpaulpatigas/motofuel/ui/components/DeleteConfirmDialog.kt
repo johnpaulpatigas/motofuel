@@ -29,7 +29,7 @@ fun DeleteConfirmDialog(
         },
         text = {
             Text(
-                text = "Are you sure you want to delete the record at ${formatOneDecimal(recordToDelete.odometerKm)} km (${formatOneDecimal(recordToDelete.litersAdded)} L)?\n\nDeleting this record will automatically recalculate interval distances for adjacent records and rebuild model statistics.",
+                text = "Are you sure you want to delete the record at ${com.johnpaulpatigas.motofuel.util.FormatUtils.formatKm(recordToDelete.odometerKm)} km (${formatOneDecimal(recordToDelete.litersAdded)} L)?\n\nDeleting this record will automatically recalculate interval distances for adjacent records and rebuild model statistics.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

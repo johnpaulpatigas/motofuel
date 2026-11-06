@@ -217,7 +217,7 @@ fun DashboardHeroCard(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Target: ${formatOneDecimal(target)} km/L",
+                                text = "Target: ${com.johnpaulpatigas.motofuel.util.FormatUtils.formatOneDecimalClean(target)} km/L",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant

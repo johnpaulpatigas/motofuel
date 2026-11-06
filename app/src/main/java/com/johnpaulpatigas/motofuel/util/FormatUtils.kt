@@ -15,10 +15,15 @@ object FormatUtils {
     }
 
     /**
-     * Format kilometer reading, e.g. 12500.5
+     * Format kilometer reading, e.g. 12500 or 12500.5
      */
     fun formatKm(value: Double): String {
-        return ((value * 10).roundToInt() / 10.0).toString()
+        val rounded = (value * 10).roundToInt() / 10.0
+        return if (rounded % 1.0 == 0.0) {
+            rounded.toLong().toString()
+        } else {
+            rounded.toString()
+        }
     }
 
     /**
@@ -29,6 +34,18 @@ object FormatUtils {
             value.toLong().toString()
         } else {
             value.toString()
+        }
+    }
+
+    /**
+     * Format a double to one decimal place, omitting trailing .0 if integer, e.g. 30 instead of 30.0
+     */
+    fun formatOneDecimalClean(value: Double): String {
+        val rounded = (value * 10).roundToInt() / 10.0
+        return if (rounded % 1.0 == 0.0) {
+            rounded.toLong().toString()
+        } else {
+            rounded.toString()
         }
     }
 }

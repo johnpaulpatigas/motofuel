@@ -58,9 +58,9 @@ fun StatsSummaryGrid(
         ) {
             StatCard(
                 title = "Full Tank Range",
-                value = estimation.estimatedRangeKm?.let { "~${formatOneDecimal(it)} km" } ?: "---",
+                value = estimation.estimatedRangeKm?.let { "~${com.johnpaulpatigas.motofuel.util.FormatUtils.formatKm(it)} km" } ?: "---",
                 subtitle = if (estimation.tankCapacityLiters > 0.0) {
-                    "On ${formatOneDecimal(estimation.tankCapacityLiters)} L tank"
+                    "On ${com.johnpaulpatigas.motofuel.util.FormatUtils.formatOneDecimalClean(estimation.tankCapacityLiters)} L tank"
                 } else {
                     "Set capacity in Settings"
                 },
@@ -92,7 +92,7 @@ fun StatsSummaryGrid(
 
             StatCard(
                 title = "Total Distance",
-                value = "${formatOneDecimal(estimation.totalDistanceKm)} km",
+                value = "${com.johnpaulpatigas.motofuel.util.FormatUtils.formatKm(estimation.totalDistanceKm)} km",
                 subtitle = "Since baseline",
                 icon = Icons.Default.Route,
                 modifier = Modifier.weight(1f)

@@ -352,6 +352,13 @@ class EstimationEngine(
         }
     }
 
-    private fun formatKm(value: Double): String = ((value * 10).roundToInt() / 10.0).toString()
+    private fun formatKm(value: Double): String {
+        val rounded = (value * 10).roundToInt() / 10.0
+        return if (rounded % 1.0 == 0.0) {
+            rounded.toLong().toString()
+        } else {
+            rounded.toString()
+        }
+    }
     private fun formatOneDecimal(value: Double): String = ((value * 10).roundToInt() / 10.0).toString()
 }

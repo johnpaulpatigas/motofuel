@@ -246,7 +246,7 @@ fun FuelTrendChart(
                 val targetGoalText = remember(targetKmLiters, yMin, yMax, targetLineColor, axisLabelStyle) {
                     if (targetKmLiters > 0.0 && targetKmLiters in yMin..yMax) {
                         textMeasurer.measure(
-                            text = "Target: ${FormatUtils.formatOneDecimal(targetKmLiters)} km/L",
+                            text = "Target: ${FormatUtils.formatOneDecimalClean(targetKmLiters)} km/L",
                             style = axisLabelStyle.copy(color = targetLineColor, fontWeight = FontWeight.Bold)
                         )
                     } else null
@@ -438,6 +438,35 @@ fun FuelTrendChart(
                     )
 
                     if (trendPoints.isNotEmpty()) {
+                        val minPixelDistance = 75.dp.toPx()
+                        val selectedIndices = mutableListOf<Int>()
+                        
+                        selectedIndices.add(0)
+                        var lastX = leftMargin + ((trendPoints[0].odometerKm - xMin) / (xMax - xMin)).toFloat().coerceIn(0f, 1f) * chartWidth
+                        
+                        for (idx in 1 until trendPoints.lastIndex) {
+                            val pt = trendPoints[idx]
+                            val xRatio = ((pt.odometerKm - xMin) / (xMax - xMin)).toFloat().coerceIn(0f, 1f)
+                            val xPos = leftMargin + xRatio * chartWidth
+                            
+                            if (xPos >= lastX + minPixelDistance) {
+                                selectedIndices.add(idx)
+                                lastX = xPos
+                            }
+                        }
+                        
+                        if (trendPoints.lastIndex > 0) {
+                            val lastIdx = trendPoints.lastIndex
+                            val lastPt = trendPoints[lastIdx]
+                            val lastXRatio = ((lastPt.odometerKm - xMin) / (xMax - xMin)).toFloat().coerceIn(0f, 1f)
+                            val lastXPos = leftMargin + lastXRatio * chartWidth
+                            
+                            if (selectedIndices.size > 1 && lastXPos < lastX + minPixelDistance) {
+                                selectedIndices.removeAt(selectedIndices.lastIndex)
+                            }
+                            selectedIndices.add(lastIdx)
+                        }
+
                         trendPoints.forEachIndexed { idx, pt ->
                             val xRatio = ((pt.odometerKm - xMin) / (xMax - xMin)).toFloat().coerceIn(0f, 1f)
                             val xPos = leftMargin + xRatio * chartWidth
@@ -449,18 +478,21 @@ fun FuelTrendChart(
                                 strokeWidth = 1.5.dp.toPx()
                             )
 
-                            val labelResult = odoTickLabels.getOrNull(idx)
-                            if (labelResult != null) {
-                                val labelX = when (idx) {
-                                    0 -> xPos
-                                    trendPoints.lastIndex -> xPos - labelResult.size.width
-                                    else -> xPos - labelResult.size.width / 2f
-                                }.coerceIn(leftMargin, size.width - rightMargin - labelResult.size.width)
+                            if (idx in selectedIndices) {
+                                val labelResult = odoTickLabels.getOrNull(idx)
+                                if (labelResult != null) {
+                                    val labelWidth = labelResult.size.width.toFloat()
+                                    val labelX = when (idx) {
+                                        0 -> xPos
+                                        trendPoints.lastIndex -> xPos - labelWidth
+                                        else -> xPos - labelWidth / 2f
+                                    }.coerceIn(leftMargin, size.width - rightMargin - labelWidth)
 
-                                drawText(
-                                    textLayoutResult = labelResult,
-                                    topLeft = Offset(labelX, topMargin + chartHeight + 6.dp.toPx())
-                                )
+                                    drawText(
+                                        textLayoutResult = labelResult,
+                                        topLeft = Offset(labelX, topMargin + chartHeight + 6.dp.toPx())
+                                    )
+                                }
                             }
                         }
 
