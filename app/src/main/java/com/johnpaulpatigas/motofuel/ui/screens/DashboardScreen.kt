@@ -95,7 +95,7 @@ fun DashboardScreen(
             uiState.isClearAllDialogOpen -> viewModel.closeClearAllDialog()
             selectedTab != 0 -> {
                 selectedTab = 0
-                coroutineScope.launch { pagerState.animateScrollToPage(0) }
+                coroutineScope.launch { pagerState.scrollToPage(0) }
             }
         }
     }
@@ -122,7 +122,7 @@ fun DashboardScreen(
                         uiState = uiState,
                         onNavigateToLogs = { 
                             selectedTab = 1
-                            coroutineScope.launch { pagerState.animateScrollToPage(1) }
+                            coroutineScope.launch { pagerState.scrollToPage(1) }
                         },
                         onEditRecord = { record -> viewModel.openEditDialog(record) },
                         onDeleteRecord = { record -> viewModel.openDeleteDialog(record) }
@@ -183,7 +183,7 @@ fun DashboardScreen(
                                 Surface(
                                     onClick = { 
                                         selectedTab = index 
-                                        coroutineScope.launch { pagerState.animateScrollToPage(index) }
+                                        coroutineScope.launch { pagerState.scrollToPage(index) }
                                     },
                                     shape = CircleShape,
                                     color = if (isSelected) activeContainerColor else Color.Transparent,
