@@ -1,5 +1,6 @@
 package com.johnpaulpatigas.motofuel.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -17,12 +19,14 @@ import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -67,11 +71,32 @@ fun AddEditRecordBottomSheet(
         "Odometer must be greater than previous (${formatClean(prevOdo)} km)"
     } else null
 
+    val textFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        focusedBorderColor = MaterialTheme.colorScheme.primary,
+        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+        focusedLabelColor = MaterialTheme.colorScheme.primary,
+        unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+        focusedLeadingIconColor = MaterialTheme.colorScheme.primary,
+        unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        focusedTrailingIconColor = MaterialTheme.colorScheme.primary,
+        unfocusedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        focusedSupportingTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        unfocusedSupportingTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        errorBorderColor = MaterialTheme.colorScheme.error,
+        errorLabelColor = MaterialTheme.colorScheme.error,
+        errorSupportingTextColor = MaterialTheme.colorScheme.error
+    )
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         shape = MaterialTheme.shapes.extraLarge,
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        contentColor = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.imePadding()
     ) {
         Column(
@@ -102,7 +127,7 @@ fun AddEditRecordBottomSheet(
             OutlinedTextField(
                 value = odometerText,
                 onValueChange = { odometerText = it },
-                label = { Text("Odometer Reading") },
+                label = { Text("Odometer Reading", fontWeight = FontWeight.Medium) },
                 placeholder = { Text("e.g. 12450.0") },
                 supportingText = {
                     Text(
@@ -113,20 +138,20 @@ fun AddEditRecordBottomSheet(
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Speed,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
+                        contentDescription = null
                     )
                 },
                 trailingIcon = {
                     Text(
                         text = "km",
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(end = 12.dp)
                     )
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
+                colors = textFieldColors,
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium
             )
@@ -136,25 +161,25 @@ fun AddEditRecordBottomSheet(
             OutlinedTextField(
                 value = litersText,
                 onValueChange = { litersText = it },
-                label = { Text("Fuel Added") },
+                label = { Text("Fuel Added", fontWeight = FontWeight.Medium) },
                 placeholder = { Text("e.g. 3.8") },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.LocalGasStation,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
+                        contentDescription = null
                     )
                 },
                 trailingIcon = {
                     Text(
                         text = "Liters",
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(end = 12.dp)
                     )
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
+                colors = textFieldColors,
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium
             )
@@ -164,25 +189,25 @@ fun AddEditRecordBottomSheet(
             OutlinedTextField(
                 value = priceText,
                 onValueChange = { priceText = it },
-                label = { Text("Price per Liter (Optional)") },
+                label = { Text("Price per Liter (Optional)", fontWeight = FontWeight.Medium) },
                 placeholder = { Text("e.g. 62.50") },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.AttachMoney,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
+                        contentDescription = null
                     )
                 },
                 trailingIcon = {
                     Text(
                         text = currencySymbol,
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(end = 12.dp)
                     )
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
+                colors = textFieldColors,
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium
             )
@@ -207,16 +232,26 @@ fun AddEditRecordBottomSheet(
                 OutlinedButton(
                     onClick = onDismiss,
                     modifier = Modifier.weight(1f),
-                    shape = androidx.compose.foundation.shape.CircleShape
+                    shape = CircleShape,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    )
                 ) {
-                    Text("Cancel")
+                    Text("Cancel", fontWeight = FontWeight.SemiBold)
                 }
 
                 Button(
                     onClick = { onSave(odometerText, litersText, priceText.ifBlank { null }) },
                     enabled = odoWarning == null,
                     modifier = Modifier.weight(1f),
-                    shape = androidx.compose.foundation.shape.CircleShape
+                    shape = CircleShape,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
                 ) {
                     Text(
                         text = if (isEdit) "Save Changes" else "Add Record",
