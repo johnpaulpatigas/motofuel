@@ -31,6 +31,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -214,27 +216,25 @@ fun DashboardScreen(
                         }
                     }
 
-                    // Separate Rounded Square FAB Beside Floating Toolbar
+                    // Floating Action Button
                     AnimatedVisibility(
                         visible = selectedTab != 2,
                         enter = fadeIn(tween(150)) + scaleIn(tween(150)),
                         exit = fadeOut(tween(100)) + scaleOut(tween(100))
                     ) {
-                        Surface(
+                        FloatingActionButton(
                             onClick = { viewModel.openAddDialog() },
                             shape = RoundedCornerShape(14.dp),
-                            color = MaterialTheme.colorScheme.primary,
+                            containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary,
-                            shadowElevation = 6.dp,
+                            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
                             modifier = Modifier.size(48.dp)
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = "Log Refuel",
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Log Refuel",
+                                modifier = Modifier.size(24.dp)
+                            )
                         }
                     }
                 }
