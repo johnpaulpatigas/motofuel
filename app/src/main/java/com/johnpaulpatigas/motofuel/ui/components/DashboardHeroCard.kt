@@ -13,17 +13,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Flag
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -31,12 +25,8 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,23 +36,21 @@ import androidx.compose.ui.unit.sp
 import com.johnpaulpatigas.motofuel.data.model.EstimationResult
 import com.johnpaulpatigas.motofuel.data.model.ReliabilityLevel
 import com.johnpaulpatigas.motofuel.ui.theme.semanticColors
-import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
- * Hero card displaying overall fuel economy (km/L) and target progress with statistical confidence.
+ * Hero card displaying overall fuel economy (km/L) and target progress.
  */
 @Composable
 fun DashboardHeroCard(
     estimation: EstimationResult,
     modifier: Modifier = Modifier
 ) {
-    var showExplanationDialog by remember { mutableStateOf(false) }
-
     val overall = estimation.cumulativeKmLiters
     val target = estimation.targetKmLiters
-    val uncertainty = estimation.uncertaintyMargin
     val diff = estimation.efficiencyVsTarget
+    val intervalCount = estimation.intervalCount
+    val totalDist = estimation.totalDistanceKm
 
     val animatedOverall by animateFloatAsState(
         targetValue = (overall ?: 0.0).toFloat(),
@@ -115,10 +103,20 @@ fun DashboardHeroCard(
                     )
                 }
 
-                ConfidenceBadge(
-                    level = estimation.reliability,
-                    onClick = { showExplanationDialog = true }
-                )
+                if (overall != null && intervalCount > 0) {
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest
+                    ) {
+                        Text(
+                            text = "$intervalCount refuels logged",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(18.dp))
@@ -143,38 +141,17 @@ fun DashboardHeroCard(
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
-
-                    if (uncertainty != null && uncertainty > 0.0) {
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Surface(
-                            onClick = { showExplanationDialog = true },
-                            shape = MaterialTheme.shapes.extraSmall,
-                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            modifier = Modifier.padding(bottom = 12.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = "±${formatOneDecimal(uncertainty)} error",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Spacer(modifier = Modifier.width(3.dp))
-                                Icon(
-                                    imageVector = Icons.Default.Info,
-                                    contentDescription = "Explain error margin",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(12.dp)
-                                )
-                            }
-                        }
-                    }
                 }
 
-                // Progress Bar vs Goal Target
+                if (totalDist > 0.0) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Average across ${com.johnpaulpatigas.motofuel.util.FormatUtils.formatKm(totalDist)} km total distance",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
                 if (target > 0.0) {
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -281,7 +258,7 @@ fun DashboardHeroCard(
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "Add at least 2 refueling entries to start estimating fuel economy.",
+                        text = "Add at least 2 refueling entries to start calculating fuel economy.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -289,182 +266,6 @@ fun DashboardHeroCard(
             }
         }
     }
-
-    if (showExplanationDialog) {
-        ErrorMarginExplanationDialog(
-            estimation = estimation,
-            onDismiss = { showExplanationDialog = false }
-        )
-    }
-}
-
-@Composable
-private fun ConfidenceBadge(
-    level: ReliabilityLevel,
-    onClick: () -> Unit
-) {
-    val (label, containerColor, textColor) = when (level) {
-        ReliabilityLevel.INSUFFICIENT_DATA -> Triple(
-            "Data Needed",
-            MaterialTheme.colorScheme.surfaceContainerHighest,
-            MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        ReliabilityLevel.LOW -> Triple(
-            "Low Confidence",
-            MaterialTheme.semanticColors.criticalContainer,
-            MaterialTheme.semanticColors.onCriticalContainer
-        )
-        ReliabilityLevel.MEDIUM -> Triple(
-            "Medium Confidence",
-            MaterialTheme.semanticColors.warningContainer,
-            MaterialTheme.semanticColors.onWarningContainer
-        )
-        ReliabilityLevel.HIGH -> Triple(
-            "High Confidence",
-            MaterialTheme.semanticColors.goodContainer,
-            MaterialTheme.semanticColors.onGoodContainer
-        )
-    }
-
-    AssistChip(
-        onClick = onClick,
-        label = {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold
-            )
-        },
-        colors = AssistChipDefaults.assistChipColors(
-            containerColor = containerColor,
-            labelColor = textColor
-        ),
-        border = null,
-        shape = MaterialTheme.shapes.small
-    )
-}
-
-@Composable
-private fun ErrorMarginExplanationDialog(
-    estimation: EstimationResult,
-    onDismiss: () -> Unit
-) {
-    val overall = estimation.cumulativeKmLiters ?: 0.0
-    val uncertainty = estimation.uncertaintyMargin ?: 0.0
-    val lower = max(0.0, overall - uncertainty)
-    val upper = overall + uncertainty
-    val count = estimation.intervalCount
-    val dist = estimation.totalDistanceKm
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Info,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(22.dp)
-                )
-                Text(
-                    text = "Error Margin (±${formatOneDecimal(uncertainty)} km/L)",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        },
-        text = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Expected Range Surface
-                Surface(
-                    shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            text = "95% CONFIDENCE RANGE",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "${formatOneDecimal(lower)} - ${formatOneDecimal(upper)} km/L",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Black,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Estimated true fuel economy based on $count interval logs across ${formatOneDecimal(dist)} km.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
-                        )
-                    }
-                }
-
-                Text(
-                    text = "Why is it ±${formatOneDecimal(uncertainty)} km/L?",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "This margin accounts for real-world fuel log variations, including:\n" +
-                            "• Partial vs full fill-ups (fuel added doesn't always equal fuel consumed)\n" +
-                            "• Pump nozzle cut-off differences and motorcycle tilt\n" +
-                            "• Variations between city and highway riding",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Text(
-                    text = "Why this specific value?",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = if (count < 5) {
-                        "With $count recorded interval(s), statistical sample size is still growing. Smaller sample sizes result in a wider error margin."
-                    } else {
-                        "Calculated from variance across your $count refueling intervals. As you log more consistent fill-ups, statistical variance decreases."
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Text(
-                    text = "How to narrow the margin:",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "• Continue logging refueling entries after riding\n" +
-                            "• Fill the tank to full when possible\n" +
-                            "• Ensure accurate odometer entries",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Got It", fontWeight = FontWeight.Bold)
-            }
-        },
-        shape = MaterialTheme.shapes.extraLarge
-    )
 }
 
 private fun formatOneDecimal(value: Double): String = ((value * 10).roundToInt() / 10.0).toString()

@@ -27,7 +27,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.johnpaulpatigas.motofuel.data.model.RefuelingRecord
-import com.johnpaulpatigas.motofuel.ui.components.EfficiencyChangeCard
 import com.johnpaulpatigas.motofuel.ui.components.FuelTrendChart
 import com.johnpaulpatigas.motofuel.ui.components.RefuelingHistoryList
 import com.johnpaulpatigas.motofuel.ui.theme.semanticColors
@@ -36,7 +35,7 @@ import com.johnpaulpatigas.motofuel.util.FormatUtils
 
 /**
  * Analytics and complete logs screen presenting fuel economy trend,
- * CUSUM efficiency-change alerts, interval extremes, and month-grouped refueling records.
+ * interval extremes, and month-grouped refueling records.
  */
 @Composable
 fun AnalyticsScreen(
@@ -54,7 +53,6 @@ fun AnalyticsScreen(
     ) {
         Spacer(modifier = Modifier.height(4.dp))
 
-        // Analytics Title Header with Icon
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(start = 4.dp, top = 2.dp)
@@ -87,10 +85,6 @@ fun AnalyticsScreen(
         AnalyticsSummaryRow(
             records = uiState.records,
             cumulativeKmLiters = uiState.estimation.cumulativeKmLiters
-        )
-
-        EfficiencyChangeCard(
-            signal = uiState.estimation.efficiencyChangeSignal
         )
 
         FuelTrendChart(
