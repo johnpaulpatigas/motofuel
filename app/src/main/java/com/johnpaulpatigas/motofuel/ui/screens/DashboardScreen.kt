@@ -51,7 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.johnpaulpatigas.motofuel.ui.components.AddEditRecordDialog
+import com.johnpaulpatigas.motofuel.ui.components.AddEditRecordBottomSheet
 import com.johnpaulpatigas.motofuel.ui.components.ClearAllConfirmDialog
 import com.johnpaulpatigas.motofuel.ui.components.DeleteConfirmDialog
 import com.johnpaulpatigas.motofuel.ui.viewmodel.FuelViewModel
@@ -248,9 +248,9 @@ fun DashboardScreen(
         }
     }
 
-    // Add Record Dialog
+    // Add Record Bottom Sheet
     if (uiState.isAddDialogOpen) {
-        AddEditRecordDialog(
+        AddEditRecordBottomSheet(
             recordToEdit = null,
             lastRecord = uiState.records.lastOrNull(),
             validationError = uiState.validationError,
@@ -260,9 +260,9 @@ fun DashboardScreen(
         )
     }
 
-    // Edit Record Dialog
+    // Edit Record Bottom Sheet
     uiState.recordToEdit?.let { record ->
-        AddEditRecordDialog(
+        AddEditRecordBottomSheet(
             recordToEdit = record,
             lastRecord = uiState.records.dropLast(1).lastOrNull(),
             validationError = uiState.validationError,
