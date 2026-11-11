@@ -38,6 +38,14 @@ object FormatUtils {
     }
 
     /**
+     * Format currency amount with two decimal places, e.g. 250.00
+     */
+    fun formatCurrencyAmount(value: Double): String {
+        val rounded = (java.math.BigDecimal.valueOf(value).setScale(2, java.math.RoundingMode.HALF_UP))
+        return String.format(java.util.Locale.US, "%.2f", rounded.toDouble())
+    }
+
+    /**
      * Format a double to one decimal place, omitting trailing .0 if integer, e.g. 30 instead of 30.0
      */
     fun formatOneDecimalClean(value: Double): String {

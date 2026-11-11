@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -28,6 +30,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -86,6 +89,18 @@ fun AddEditRecordBottomSheet(
 
     val currentOdo = odometerText.toDoubleOrNull()
     val prevOdo = lastRecord?.odometerKm
+
+    val calculatedTotalCost: Double? = remember(litersText, priceText) {
+        val liters = litersText.toDoubleOrNull()
+        val price = priceText.toDoubleOrNull()
+        if (liters != null && price != null && liters > 0.0 && price > 0.0) {
+            val litersBd = java.math.BigDecimal.valueOf(liters)
+            val priceBd = java.math.BigDecimal.valueOf(price)
+            litersBd.multiply(priceBd).setScale(2, java.math.RoundingMode.HALF_UP).toDouble()
+        } else {
+            null
+        }
+    }
 
     val odoWarning = if (!isEdit && prevOdo != null && currentOdo != null && currentOdo <= prevOdo) {
         "Odometer must be greater than previous (${formatClean(prevOdo)} km)"
@@ -270,6 +285,46 @@ fun AddEditRecordBottomSheet(
                     color = MaterialTheme.colorScheme.error,
                     fontWeight = FontWeight.Bold
                 )
+            }
+
+            if (calculatedTotalCost != null) {
+                Spacer(modifier = Modifier.height(14.dp))
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.AttachMoney,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Estimated Total Cost",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        Text(
+                            text = "$currencySymbol${com.johnpaulpatigas.motofuel.util.FormatUtils.formatCurrencyAmount(calculatedTotalCost)}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
