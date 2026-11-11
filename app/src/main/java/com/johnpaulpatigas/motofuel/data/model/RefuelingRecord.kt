@@ -11,6 +11,7 @@ data class RefuelingRecord(
     val timestamp: Long = System.currentTimeMillis(),
     val intervalKm: Double? = null,
     val intervalKmLiters: Double? = null,
+    val cumulativeKmLiters: Double? = null,
     val isBaseline: Boolean = false
 ) {
     val totalCost: Double?

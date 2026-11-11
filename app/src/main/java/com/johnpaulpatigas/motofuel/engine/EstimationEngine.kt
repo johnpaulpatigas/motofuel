@@ -30,6 +30,8 @@ class EstimationEngine(
         )
 
         val result = mutableListOf<RefuelingRecord>()
+        var runningDistance = 0.0
+        var runningFuel = 0.0
 
         for (i in sorted.indices) {
             val current = sorted[i]
@@ -44,6 +46,7 @@ class EstimationEngine(
                         timestamp = current.timestamp,
                         intervalKm = null,
                         intervalKmLiters = null,
+                        cumulativeKmLiters = null,
                         isBaseline = true
                     )
                 )
@@ -56,6 +59,13 @@ class EstimationEngine(
                     intervalKm / current.litersAdded
                 } else null
 
+                runningDistance += intervalKm
+                runningFuel += current.litersAdded
+
+                val cumulativeKmLiters = if (runningDistance > 0.0 && runningFuel > 0.0) {
+                    runningDistance / runningFuel
+                } else null
+
                 result.add(
                     RefuelingRecord(
                         id = current.id,
@@ -65,6 +75,7 @@ class EstimationEngine(
                         timestamp = current.timestamp,
                         intervalKm = intervalKm,
                         intervalKmLiters = intervalKmLiters,
+                        cumulativeKmLiters = cumulativeKmLiters,
                         isBaseline = false
                     )
                 )
