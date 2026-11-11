@@ -96,7 +96,11 @@ fun RefuelingHistoryList(
                 }
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
-                    text = if (maxItems != null) "Recent Activity" else "Refueling Logs (${records.size})",
+                    text = when (maxItems) {
+                        1 -> "Latest Refueling"
+                        null -> "Refueling Logs (${records.size})"
+                        else -> "Recent Activity"
+                    },
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )

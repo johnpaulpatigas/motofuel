@@ -125,7 +125,13 @@ fun DashboardScreen(
                         onNavigateToSettings = {
                             selectedTab = 2
                             coroutineScope.launch { pagerState.animateScrollToPage(2) }
-                        }
+                        },
+                        onNavigateToLogs = {
+                            selectedTab = 1
+                            coroutineScope.launch { pagerState.animateScrollToPage(1) }
+                        },
+                        onEditRecord = { record -> viewModel.openEditDialog(record) },
+                        onDeleteRecord = { record -> viewModel.openDeleteDialog(record) }
                     )
                     1 -> AnalyticsScreen(
                         uiState = uiState,
