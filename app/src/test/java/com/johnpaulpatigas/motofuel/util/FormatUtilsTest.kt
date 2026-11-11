@@ -20,6 +20,8 @@ class FormatUtilsTest {
         assertEquals("1.85", FormatUtils.formatTwoDecimals(1.854))
         assertEquals("1.86", FormatUtils.formatTwoDecimals(1.856))
         assertEquals("2.0", FormatUtils.formatTwoDecimals(2.0))
+        assertEquals("3.80", FormatUtils.formatTwoDecimalsFixed(3.8))
+        assertEquals("15.25", FormatUtils.formatTwoDecimalsFixed(15.25))
     }
 
     @Test

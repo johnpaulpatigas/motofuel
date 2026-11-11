@@ -45,6 +45,13 @@ object FormatUtils {
     }
 
     /**
+     * Format a double to two decimal places with fixed precision, e.g. 3.80 or 15.25
+     */
+    fun formatTwoDecimalsFixed(value: Double): String {
+        return String.format(java.util.Locale.US, "%.2f", value)
+    }
+
+    /**
      * Format currency amount with two decimal places, e.g. 250.00
      */
     fun formatCurrencyAmount(value: Double): String {

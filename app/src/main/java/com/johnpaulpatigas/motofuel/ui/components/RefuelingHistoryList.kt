@@ -289,7 +289,7 @@ fun RefuelingHistoryList(
                                                 )
                                                 Spacer(modifier = Modifier.width(4.dp))
                                                 Text(
-                                                    text = "$currencySymbol${FormatUtils.formatOneDecimal(totalMonthCost)}",
+                                                    text = "$currencySymbol${FormatUtils.formatCurrencyAmount(totalMonthCost)}",
                                                     style = MaterialTheme.typography.labelSmall,
                                                     fontWeight = FontWeight.Bold,
                                                     color = MaterialTheme.colorScheme.onSurface
@@ -414,9 +414,9 @@ private fun CompactHistoryRow(
                 }
             }
             Spacer(modifier = Modifier.height(2.dp))
-            val costStr = record.totalCost?.let { if (it > 0.0) " • $currencySymbol${FormatUtils.formatOneDecimal(it)}" else "" } ?: ""
+            val costStr = record.totalCost?.let { if (it > 0.0) " • $currencySymbol${FormatUtils.formatCurrencyAmount(it)}" else "" } ?: ""
             Text(
-                text = "${FormatUtils.formatOneDecimal(record.litersAdded)} L$costStr • ${formatDate(record.timestamp)}",
+                text = "${FormatUtils.formatTwoDecimalsFixed(record.litersAdded)} L$costStr • ${formatDate(record.timestamp)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
