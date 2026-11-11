@@ -105,7 +105,7 @@ fun RefuelingHistoryList(
             if (maxItems == null && records.size > 3) {
                 IconButton(
                     onClick = { showAllLogs = !showAllLogs },
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
                         imageVector = if (showAllLogs) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
@@ -303,7 +303,7 @@ fun RefuelingHistoryList(
                                                     expandedMonths + monthHeader
                                                 }
                                             },
-                                            modifier = Modifier.size(24.dp)
+                                            modifier = Modifier.size(48.dp)
                                         ) {
                                             Icon(
                                                 imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
@@ -493,13 +493,13 @@ private fun CompactHistoryRow(
         Box {
             IconButton(
                 onClick = { menuExpanded = true },
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(48.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = "More actions",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
 
