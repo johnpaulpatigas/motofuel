@@ -16,6 +16,25 @@ class FormatUtilsTest {
     }
 
     @Test
+    fun formatTwoDecimals_formatsCleanly() {
+        assertEquals("1.85", FormatUtils.formatTwoDecimals(1.854))
+        assertEquals("1.86", FormatUtils.formatTwoDecimals(1.856))
+        assertEquals("2.0", FormatUtils.formatTwoDecimals(2.0))
+    }
+
+    @Test
+    fun formatOneDecimal_and_formatKm_behaveConsistently() {
+        assertEquals("35.4", FormatUtils.formatOneDecimal(35.42))
+        assertEquals("35.5", FormatUtils.formatOneDecimal(35.47))
+        assertEquals("12500", FormatUtils.formatKm(12500.0))
+        assertEquals("12500.5", FormatUtils.formatKm(12500.5))
+        assertEquals("15", FormatUtils.formatClean(15.0))
+        assertEquals("15.2", FormatUtils.formatClean(15.2))
+        assertEquals("30", FormatUtils.formatOneDecimalClean(30.0))
+        assertEquals("30.5", FormatUtils.formatOneDecimalClean(30.54))
+    }
+
+    @Test
     fun calculateTotalCost_precisionAndEdgeCases() {
         val testCalculation = { litersStr: String, priceStr: String ->
             val liters = litersStr.toDoubleOrNull()

@@ -38,6 +38,13 @@ object FormatUtils {
     }
 
     /**
+     * Format a double to two decimal places, e.g. 1.85
+     */
+    fun formatTwoDecimals(value: Double): String {
+        return ((value * 100).roundToInt() / 100.0).toString()
+    }
+
+    /**
      * Format currency amount with two decimal places, e.g. 250.00
      */
     fun formatCurrencyAmount(value: Double): String {

@@ -74,7 +74,7 @@ fun StatsSummaryGrid(
 
             StatCard(
                 title = "Fuel Spend",
-                value = "${estimation.currencySymbol}${formatOneDecimal(estimation.totalSpendCost)}",
+                value = "${estimation.currencySymbol}${com.johnpaulpatigas.motofuel.util.FormatUtils.formatOneDecimal(estimation.totalSpendCost)}",
                 subtitle = "Total spent",
                 icon = Icons.Default.Payments,
                 modifier = Modifier.weight(1f)
@@ -88,7 +88,7 @@ fun StatsSummaryGrid(
         ) {
             StatCard(
                 title = "Cost per Kilometer",
-                value = estimation.costPerKm?.let { "${estimation.currencySymbol}${formatTwoDecimals(it)} / km" } ?: "---",
+                value = estimation.costPerKm?.let { "${estimation.currencySymbol}${com.johnpaulpatigas.motofuel.util.FormatUtils.formatTwoDecimals(it)} / km" } ?: "---",
                 subtitle = "Average cost",
                 icon = Icons.Default.LocalGasStation,
                 modifier = Modifier.weight(1f)
@@ -185,6 +185,3 @@ private fun StatCard(
         }
     }
 }
-
-private fun formatOneDecimal(value: Double): String = ((value * 10).roundToInt() / 10.0).toString()
-private fun formatTwoDecimals(value: Double): String = ((value * 100).roundToInt() / 100.0).toString()

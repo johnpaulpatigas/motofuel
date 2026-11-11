@@ -330,6 +330,7 @@ fun RefuelingHistoryList(
                                             CompactHistoryRow(
                                                 record = record,
                                                 targetKmLiters = targetKmLiters,
+                                                currencySymbol = currencySymbol,
                                                 onEditClick = onEditClick,
                                                 onDeleteClick = onDeleteClick
                                             )
@@ -355,6 +356,7 @@ fun RefuelingHistoryList(
 private fun CompactHistoryRow(
     record: RefuelingRecord,
     targetKmLiters: Double,
+    currencySymbol: String = "₱",
     onEditClick: (RefuelingRecord) -> Unit,
     onDeleteClick: (RefuelingRecord) -> Unit
 ) {
@@ -408,7 +410,7 @@ private fun CompactHistoryRow(
                 }
             }
             Spacer(modifier = Modifier.height(2.dp))
-            val costStr = record.totalCost?.let { if (it > 0.0) " • ₱${FormatUtils.formatOneDecimal(it)}" else "" } ?: ""
+            val costStr = record.totalCost?.let { if (it > 0.0) " • $currencySymbol${FormatUtils.formatOneDecimal(it)}" else "" } ?: ""
             Text(
                 text = "${FormatUtils.formatOneDecimal(record.litersAdded)} L$costStr • ${formatDate(record.timestamp)}",
                 style = MaterialTheme.typography.bodySmall,

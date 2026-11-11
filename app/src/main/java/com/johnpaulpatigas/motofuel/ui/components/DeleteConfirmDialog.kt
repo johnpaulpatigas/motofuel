@@ -10,7 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.johnpaulpatigas.motofuel.data.model.RefuelingRecord
-import kotlin.math.roundToInt
+import com.johnpaulpatigas.motofuel.util.FormatUtils
 
 @Composable
 fun DeleteConfirmDialog(
@@ -29,7 +29,7 @@ fun DeleteConfirmDialog(
         },
         text = {
             Text(
-                text = "Are you sure you want to delete the record at ${com.johnpaulpatigas.motofuel.util.FormatUtils.formatKm(recordToDelete.odometerKm)} km (${formatOneDecimal(recordToDelete.litersAdded)} L)?\n\nDeleting this record will automatically recalculate interval distances for adjacent records and rebuild model statistics.",
+                text = "Are you sure you want to delete the record at ${FormatUtils.formatKm(recordToDelete.odometerKm)} km (${FormatUtils.formatOneDecimal(recordToDelete.litersAdded)} L)?\n\nDeleting this record will automatically recalculate interval distances for adjacent records and rebuild model statistics.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -57,5 +57,3 @@ fun DeleteConfirmDialog(
         shape = MaterialTheme.shapes.extraLarge
     )
 }
-
-private fun formatOneDecimal(value: Double): String = ((value * 10).roundToInt() / 10.0).toString()

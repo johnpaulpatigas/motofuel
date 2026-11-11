@@ -78,13 +78,13 @@ fun AddEditRecordBottomSheet(
     }
 
     var odometerText by remember(recordToEdit) {
-        mutableStateOf(recordToEdit?.odometerKm?.let { formatClean(it) } ?: "")
+        mutableStateOf(recordToEdit?.odometerKm?.let { com.johnpaulpatigas.motofuel.util.FormatUtils.formatClean(it) } ?: "")
     }
     var litersText by remember(recordToEdit) {
-        mutableStateOf(recordToEdit?.litersAdded?.let { formatClean(it) } ?: "")
+        mutableStateOf(recordToEdit?.litersAdded?.let { com.johnpaulpatigas.motofuel.util.FormatUtils.formatClean(it) } ?: "")
     }
     var priceText by remember(recordToEdit) {
-        mutableStateOf(recordToEdit?.pricePerLiter?.let { formatClean(it) } ?: "")
+        mutableStateOf(recordToEdit?.pricePerLiter?.let { com.johnpaulpatigas.motofuel.util.FormatUtils.formatClean(it) } ?: "")
     }
 
     val currentOdo = odometerText.toDoubleOrNull()
@@ -103,7 +103,7 @@ fun AddEditRecordBottomSheet(
     }
 
     val odoWarning = if (!isEdit && prevOdo != null && currentOdo != null && currentOdo <= prevOdo) {
-        "Odometer must be greater than previous (${formatClean(prevOdo)} km)"
+        "Odometer must be greater than previous (${com.johnpaulpatigas.motofuel.util.FormatUtils.formatClean(prevOdo)} km)"
     } else null
 
     val textFieldColors = OutlinedTextFieldDefaults.colors(
@@ -166,7 +166,7 @@ fun AddEditRecordBottomSheet(
                 placeholder = { Text("e.g. 12450.0") },
                 supportingText = {
                     Text(
-                        text = odoWarning ?: if (prevOdo != null) "Last record: ${formatClean(prevOdo)} km" else "First entry acts as baseline."
+                        text = odoWarning ?: if (prevOdo != null) "Last record: ${com.johnpaulpatigas.motofuel.util.FormatUtils.formatClean(prevOdo)} km" else "First entry acts as baseline."
                     )
                 },
                 isError = odoWarning != null,
@@ -365,13 +365,5 @@ fun AddEditRecordBottomSheet(
                 }
             }
         }
-    }
-}
-
-private fun formatClean(value: Double): String {
-    return if (value % 1.0 == 0.0) {
-        value.toLong().toString()
-    } else {
-        value.toString()
     }
 }

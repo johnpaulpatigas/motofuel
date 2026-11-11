@@ -127,7 +127,7 @@ fun DashboardHeroCard(
                     horizontalArrangement = Arrangement.Start
                 ) {
                     Text(
-                        text = formatOneDecimal(animatedOverall.toDouble()),
+                        text = com.johnpaulpatigas.motofuel.util.FormatUtils.formatOneDecimal(animatedOverall.toDouble()),
                         style = MaterialTheme.typography.displayLarge,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.onSurface
@@ -199,7 +199,7 @@ fun DashboardHeroCard(
                         }
 
                         if (diff != null) {
-                            val diffStr = if (diff >= 0.0) "+${formatOneDecimal(diff)}" else formatOneDecimal(diff)
+                            val diffStr = if (diff >= 0.0) "+${com.johnpaulpatigas.motofuel.util.FormatUtils.formatOneDecimal(diff)}" else com.johnpaulpatigas.motofuel.util.FormatUtils.formatOneDecimal(diff)
                             val (pillContainer, pillText, pillIcon) = when {
                                 isGood -> Triple(
                                     MaterialTheme.semanticColors.goodContainer,
@@ -267,5 +267,3 @@ fun DashboardHeroCard(
         }
     }
 }
-
-private fun formatOneDecimal(value: Double): String = ((value * 10).roundToInt() / 10.0).toString()
