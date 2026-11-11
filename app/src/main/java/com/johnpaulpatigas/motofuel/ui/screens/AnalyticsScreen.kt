@@ -84,7 +84,7 @@ fun AnalyticsScreen(
 
         AnalyticsSummaryRow(
             records = uiState.records,
-            cumulativeKmLiters = uiState.estimation.cumulativeKmLiters
+            currentKmLiters = uiState.estimation.predictedKmLiters
         )
 
         FuelTrendChart(
@@ -107,17 +107,17 @@ fun AnalyticsScreen(
 @Composable
 private fun AnalyticsSummaryRow(
     records: List<RefuelingRecord>,
-    cumulativeKmLiters: Double?
+    currentKmLiters: Double?
 ) {
-    val intervals = androidx.compose.runtime.remember(records) {
-        records.mapNotNull { it.intervalKmLiters }
+    val rlsValues = androidx.compose.runtime.remember(records) {
+        records.mapNotNull { it.currentKmLiters }
     }
-    if (intervals.isEmpty()) return
+    if (rlsValues.isEmpty()) return
 
-    val (best, worst) = androidx.compose.runtime.remember(intervals) {
+    val (best, worst) = androidx.compose.runtime.remember(rlsValues) {
         Pair(
-            intervals.maxOrNull() ?: 0.0,
-            intervals.minOrNull() ?: 0.0
+            rlsValues.maxOrNull() ?: 0.0,
+            rlsValues.minOrNull() ?: 0.0
         )
     }
 
@@ -126,19 +126,19 @@ private fun AnalyticsSummaryRow(
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         SummaryMetricCard(
-            label = "BEST INTERVAL",
+            label = "BEST RECORDED",
             value = "${FormatUtils.formatOneDecimal(best)} km/L",
             color = MaterialTheme.semanticColors.good,
             modifier = Modifier.weight(1f)
         )
         SummaryMetricCard(
-            label = "FUEL ECONOMY",
-            value = cumulativeKmLiters?.let { "${FormatUtils.formatOneDecimal(it)} km/L" } ?: "---",
+            label = "CURRENT EFFICIENCY",
+            value = currentKmLiters?.let { "${FormatUtils.formatOneDecimal(it)} km/L" } ?: "---",
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.weight(1f)
         )
         SummaryMetricCard(
-            label = "WORST INTERVAL",
+            label = "WORST RECORDED",
             value = "${FormatUtils.formatOneDecimal(worst)} km/L",
             color = MaterialTheme.semanticColors.critical,
             modifier = Modifier.weight(1f)

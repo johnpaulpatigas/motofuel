@@ -10,16 +10,20 @@ import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 /**
- * Estimation engine that processes refueling records, computes interval distance,
- * cumulative baseline estimators, recent moving averages, RLS online predictions,
- * and multi-factor statistical reliability.
+ * On-device fuel economy estimation engine.
+ *
+ * Implements online Recursive Least Squares (RLS) estimation with exponential forgetting,
+ * robust Huber loss gain attenuation, and CUSUM sequential change detection.
+ *
+ * Models fuel economy dynamically without requiring full-tank-to-full-tank fillups,
+ * absorbing partial tank fill inventory noise.
  */
 class EstimationEngine(
     private val rlsEngine: RecursiveLeastSquaresEngine = RecursiveLeastSquaresEngine()
 ) {
 
     /**
-     * Enriches raw database entities with interval distance and per-interval km/L.
+     * Enriches raw database entities with interval distance and progressive RLS fuel economy.
      * Records are sorted chronologically by timestamp and odometer reading.
      */
     fun computeDerivedRecords(entities: List<RefuelingEntity>): List<RefuelingRecord> {
@@ -30,8 +34,7 @@ class EstimationEngine(
         )
 
         val result = mutableListOf<RefuelingRecord>()
-        var runningDistance = 0.0
-        var runningFuel = 0.0
+        var currentState = RlsState()
 
         for (i in sorted.indices) {
             val current = sorted[i]
@@ -45,9 +48,7 @@ class EstimationEngine(
                         pricePerLiter = current.pricePerLiter,
                         timestamp = current.timestamp,
                         intervalKm = null,
-                        intervalKmLiters = null,
-                        cumulativeKmLiters = null,
-                        isBaseline = true
+                        currentKmLiters = null
                     )
                 )
             } else {
@@ -55,15 +56,9 @@ class EstimationEngine(
                 val rawInterval = current.odometerKm - previous.odometerKm
                 val intervalKm = max(0.0, rawInterval)
 
-                val intervalKmLiters = if (intervalKm > 0.0 && current.litersAdded > 0.0) {
-                    intervalKm / current.litersAdded
-                } else null
-
-                runningDistance += intervalKm
-                runningFuel += current.litersAdded
-
-                val cumulativeKmLiters = if (runningDistance > 0.0 && runningFuel > 0.0) {
-                    runningDistance / runningFuel
+                val currentKmL = if (intervalKm > 0.0 && current.litersAdded > 0.0) {
+                    currentState = rlsEngine.update(currentState, intervalKm, current.litersAdded)
+                    if (currentState.theta > 0.0) currentState.theta else null
                 } else null
 
                 result.add(
@@ -74,9 +69,7 @@ class EstimationEngine(
                         pricePerLiter = current.pricePerLiter,
                         timestamp = current.timestamp,
                         intervalKm = intervalKm,
-                        intervalKmLiters = intervalKmLiters,
-                        cumulativeKmLiters = cumulativeKmLiters,
-                        isBaseline = false
+                        currentKmLiters = currentKmL
                     )
                 )
             }
@@ -86,8 +79,8 @@ class EstimationEngine(
     }
 
     /**
-     * Compute full estimation summary, including cumulative baseline km/L,
-     * RLS online predictions, multi-factor statistical confidence, and trend points.
+     * Compute full estimation summary powered by Recursive Least Squares (RLS),
+     * including current adaptive economy, uncertainty margins, full tank range, and CUSUM change signals.
      */
     fun evaluate(
         records: List<RefuelingRecord>,
@@ -148,22 +141,8 @@ class EstimationEngine(
         val totalDistanceKm = intervals.sumOf { it.intervalKm ?: 0.0 }
         val totalFuelConsumed = intervals.sumOf { it.litersAdded }
 
-        // Cumulative Baseline Estimator: Total Distance / Total Fuel Consumed
-        val cumulativeKmLiters = if (totalFuelConsumed > 0.0) totalDistanceKm / totalFuelConsumed else null
-
-        // Recent moving average (last 3 intervals)
-        val recentIntervals = intervals.takeLast(3)
-        val recentDistanceKm = recentIntervals.sumOf { it.intervalKm ?: 0.0 }
-        val recentFuelLiters = recentIntervals.sumOf { it.litersAdded }
-        val recentKmLiters = if (recentFuelLiters > 0.0) recentDistanceKm / recentFuelLiters else null
-
-        // Rolling Window Estimators (W = 3, 5, 8, 10)
+        // Observations (distance km, fuel added L)
         val observations = intervals.map { Pair(it.intervalKm ?: 0.0, it.litersAdded) }
-        val windowSizes = listOf(3, 5, 8, 10)
-        val rollingWindowMap = windowSizes.associateWith { w ->
-            RollingWindowEstimator(w).evaluateLatest(observations)
-        }
-        val rollingWindowKmLiters = rollingWindowMap[5] ?: recentKmLiters
 
         // Run RLS online model sequentially
         val effectiveRlsEngine = rlsEngine
@@ -172,7 +151,7 @@ class EstimationEngine(
 
         val predictedKmLiters = if (finalRlsState.sampleCount > 0 && finalRlsState.theta > 0.0) {
             finalRlsState.theta
-        } else cumulativeKmLiters
+        } else null
 
         val uncertaintyMargin = if (finalRlsState.sampleCount >= 2) {
             finalRlsState.marginOfError95
@@ -208,14 +187,14 @@ class EstimationEngine(
         }
         val finalCusumState = cusumStates.lastOrNull() ?: CusumState()
 
-        // Overall cumulative estimator drives full-tank range
-        val estimatedRangeKm = if (tankCapacityLiters > 0.0 && cumulativeKmLiters != null && cumulativeKmLiters > 0.0) {
-            cumulativeKmLiters * tankCapacityLiters
+        // Current RLS estimator drives full-tank range
+        val estimatedRangeKm = if (tankCapacityLiters > 0.0 && predictedKmLiters != null && predictedKmLiters > 0.0) {
+            predictedKmLiters * tankCapacityLiters
         } else null
 
         val distanceSinceLastRefuelKm = intervals.lastOrNull()?.intervalKm
-        val efficiencyVsTarget = if (targetKmLiters > 0.0 && cumulativeKmLiters != null) {
-            cumulativeKmLiters - targetKmLiters
+        val efficiencyVsTarget = if (targetKmLiters > 0.0 && predictedKmLiters != null) {
+            predictedKmLiters - targetKmLiters
         } else null
 
         val costPerKm = if (totalDistanceKm > 0.0 && totalSpendCost > 0.0) {
@@ -243,41 +222,24 @@ class EstimationEngine(
         )
 
         // Build trend points for UI charts
-        var runningDistance = 0.0
-        var runningFuel = 0.0
         val trendPoints = mutableListOf<TrendPoint>()
-        val rolling5Sequence = RollingWindowEstimator(5).processSequence(observations)
 
         for (idx in intervals.indices) {
             val record = intervals[idx]
             val rlsStateAtIdx = rlsStates.getOrNull(idx)
-            val dist = record.intervalKm ?: 0.0
-            val fuel = record.litersAdded
-
-            runningDistance += dist
-            runningFuel += fuel
-            val cumulativeAtIdx = if (runningFuel > 0.0) runningDistance / runningFuel else null
-            val rollingAtIdx = rolling5Sequence.getOrNull(idx)
 
             trendPoints.add(
                 TrendPoint(
                     recordId = record.id,
                     index = idx + 1,
                     odometerKm = record.odometerKm,
-                    intervalKmLiters = record.intervalKmLiters,
-                    rlsPredictedKmLiters = rlsStateAtIdx?.theta,
-                    cumulativeKmLiters = cumulativeAtIdx,
-                    rollingWindowKmLiters = rollingAtIdx
+                    rlsPredictedKmLiters = rlsStateAtIdx?.theta
                 )
             )
         }
 
         return EstimationResult(
             reliability = reliability,
-            cumulativeKmLiters = cumulativeKmLiters,
-            recentKmLiters = recentKmLiters,
-            rollingWindowKmLiters = rollingWindowKmLiters,
-            rollingWindowMap = rollingWindowMap,
             predictedKmLiters = predictedKmLiters,
             uncertaintyMargin = uncertaintyMargin,
             efficiencyChangeSignal = finalCusumState.signal,

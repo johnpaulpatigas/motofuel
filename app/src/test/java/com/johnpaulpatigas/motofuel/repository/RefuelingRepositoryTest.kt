@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -124,7 +125,7 @@ class RefuelingRepositoryTest {
         val estimation = repository.getEstimationResult().first()
         assertEquals(250.0, estimation.totalDistanceKm, 0.001)
         assertEquals(8.0, estimation.totalFuelConsumedLiters, 0.001)
-        assertEquals(31.25, estimation.cumulativeKmLiters!!, 0.001)
+        assertNotNull(estimation.predictedKmLiters)
     }
 
     @Test

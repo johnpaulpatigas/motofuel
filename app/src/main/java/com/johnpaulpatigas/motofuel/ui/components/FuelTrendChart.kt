@@ -55,7 +55,7 @@ import com.johnpaulpatigas.motofuel.util.FormatUtils
 import kotlin.math.abs
 
 /**
- * Fuel economy trend line chart displaying historical cumulative fuel economy progression.
+ * Fuel economy trend line chart displaying historical RLS fuel economy progression.
  */
 @Composable
 fun FuelTrendChart(
@@ -158,7 +158,7 @@ fun FuelTrendChart(
                 val activePointColor = MaterialTheme.colorScheme.error
                 val targetLineColor = MaterialTheme.semanticColors.good
 
-                val allValues = trendPoints.mapNotNull { it.cumulativeKmLiters }
+                val allValues = trendPoints.mapNotNull { it.rlsPredictedKmLiters }
 
                 val rawMinOdo = trendPoints.minOf { it.odometerKm }
                 val rawMaxOdo = trendPoints.maxOf { it.odometerKm }
@@ -208,13 +208,13 @@ fun FuelTrendChart(
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                     }
-                                    currentPoint.cumulativeKmLiters?.let { cum ->
+                                    currentPoint.rlsPredictedKmLiters?.let { rlsVal ->
                                         Surface(
                                             shape = MaterialTheme.shapes.extraSmall,
                                             color = primaryColor.copy(alpha = 0.15f)
                                         ) {
                                             Text(
-                                                text = "${FormatUtils.formatOneDecimal(cum)} km/L",
+                                                text = "${FormatUtils.formatOneDecimal(rlsVal)} km/L",
                                                 style = MaterialTheme.typography.labelMedium,
                                                 fontWeight = FontWeight.Bold,
                                                 color = primaryColor,
@@ -373,15 +373,15 @@ fun FuelTrendChart(
                         )
                     }
 
-                    // Cumulative Fuel Economy Line
-                    val cumulativeOffsets = trendPoints.map { pt ->
-                        val valItem = pt.cumulativeKmLiters ?: return@map null
+                    // RLS Fuel Economy Line
+                    val seriesOffsets = trendPoints.map { pt ->
+                        val valItem = pt.rlsPredictedKmLiters ?: return@map null
                         val xRatio = ((pt.odometerKm - xMin) / (xMax - xMin)).toFloat().coerceIn(0f, 1f)
                         val yRatio = ((valItem - yMin) / (yMax - yMin)).toFloat().coerceIn(0f, 1f)
                         Offset(leftMargin + xRatio * chartWidth, topMargin + chartHeight * (1f - yRatio))
                     }
 
-                    val validOffsets = cumulativeOffsets.filterNotNull()
+                    val validOffsets = seriesOffsets.filterNotNull()
                     if (validOffsets.size >= 2) {
                         val visibleCount = (validOffsets.size * animatedProgress).toInt().coerceIn(2, validOffsets.size)
                         val visible = validOffsets.take(visibleCount)
@@ -402,7 +402,7 @@ fun FuelTrendChart(
                             )
                         )
 
-                        // Draw Cumulative Line
+                        // Draw RLS Line
                         cachedLinePath.reset()
                         cachedLinePath.moveTo(visible[0].x, visible[0].y)
                         for (i in 1 until visible.size) {
@@ -417,7 +417,7 @@ fun FuelTrendChart(
                     }
 
                     // Selected Point Guideline & Highlights
-                    cumulativeOffsets.forEachIndexed { idx, pt ->
+                    seriesOffsets.forEachIndexed { idx, pt ->
                         if (pt != null) {
                             val isSelected = idx == selectedIndex
                             if (isSelected) {

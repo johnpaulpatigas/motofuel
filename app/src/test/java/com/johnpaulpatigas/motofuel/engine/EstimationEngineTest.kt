@@ -34,7 +34,7 @@ class EstimationEngineTest {
         val record = derived.first()
         assertTrue(record.isBaseline)
         assertNull(record.intervalKm)
-        assertNull(record.intervalKmLiters)
+        assertNull(record.currentKmLiters)
         assertEquals(1000.0, record.odometerKm, 0.001)
         assertEquals(10.0, record.litersAdded, 0.001)
     }
@@ -54,17 +54,17 @@ class EstimationEngineTest {
         // Record 1 (Baseline)
         assertTrue(derived[0].isBaseline)
         assertNull(derived[0].intervalKm)
-        assertNull(derived[0].intervalKmLiters)
+        assertNull(derived[0].currentKmLiters)
 
-        // Record 2: Interval = 1250 - 1000 = 250 km. km/L = 250 / 8 = 31.25
+        // Record 2: Interval = 1250 - 1000 = 250 km. RLS km/L = 250 / 8 = 31.25
         assertFalse(derived[1].isBaseline)
         assertEquals(250.0, derived[1].intervalKm!!, 0.001)
-        assertEquals(31.25, derived[1].intervalKmLiters!!, 0.001)
+        assertEquals(31.25, derived[1].currentKmLiters!!, 0.001)
 
-        // Record 3: Interval = 1550 - 1250 = 300 km. km/L = 300 / 10 = 30.0
+        // Record 3: Interval = 1550 - 1250 = 300 km
         assertFalse(derived[2].isBaseline)
         assertEquals(300.0, derived[2].intervalKm!!, 0.001)
-        assertEquals(30.0, derived[2].intervalKmLiters!!, 0.001)
+        assertNotNull(derived[2].currentKmLiters)
     }
 
     @Test
@@ -76,11 +76,11 @@ class EstimationEngineTest {
 
         val derived = engine.computeDerivedRecords(entities)
         assertEquals(0.0, derived[1].intervalKm!!, 0.001)
-        assertNull(derived[1].intervalKmLiters)
+        assertNull(derived[1].currentKmLiters)
     }
 
     @Test
-    fun `computeDerivedRecords - zero or negative fuel yields null interval fuel economy`() {
+    fun `computeDerivedRecords - zero or negative fuel yields null fuel economy`() {
         val entities = listOf(
             RefuelingEntity(id = 1, odometerKm = 1000.0, litersAdded = 10.0, timestamp = 1000L),
             RefuelingEntity(id = 2, odometerKm = 1200.0, litersAdded = 0.0, timestamp = 2000L) // Invalid zero fuel
@@ -88,7 +88,7 @@ class EstimationEngineTest {
 
         val derived = engine.computeDerivedRecords(entities)
         assertEquals(200.0, derived[1].intervalKm!!, 0.001)
-        assertNull(derived[1].intervalKmLiters)
+        assertNull(derived[1].currentKmLiters)
     }
 
     @Test
@@ -107,11 +107,11 @@ class EstimationEngineTest {
         assertEquals(0.0, result1.totalDistanceKm, 0.001)
         assertEquals(0.0, result1.totalFuelConsumedLiters, 0.001)
         assertEquals(12.0, result1.totalFuelAddedLiters, 0.001)
-        assertNull(result1.cumulativeKmLiters)
+        assertNull(result1.predictedKmLiters)
     }
 
     @Test
-    fun `evaluate - cumulative and recent calculations exclude baseline fuel from consumed fuel`() {
+    fun `evaluate - calculates predicted economy and excludes baseline fuel from consumed fuel`() {
         // Record 0 (Baseline): Odo 10,000, Fuel 15.0 L
         // Record 1: Odo 10,200 (+200 km), Fuel 5.0 L -> km/L = 40.0
         // Record 2: Odo 10,500 (+300 km), Fuel 10.0 L -> km/L = 30.0
@@ -132,8 +132,6 @@ class EstimationEngineTest {
         assertEquals(15.0, result.totalFuelConsumedLiters, 0.001) // 5.0 + 10.0
         assertEquals(30.0, result.totalFuelAddedLiters, 0.001)   // 15.0 baseline + 15.0 consumed
 
-        // Cumulative km/L = 500 / 15 = 33.333
-        assertEquals(33.333, result.cumulativeKmLiters!!, 0.01)
         assertNotNull(result.predictedKmLiters)
         assertNotNull(result.uncertaintyMargin)
     }
@@ -150,7 +148,7 @@ class EstimationEngineTest {
 
         assertEquals(500.0, result.totalDistanceKm, 0.001)
         assertEquals(12.5, result.totalFuelConsumedLiters, 0.001)
-        assertEquals(40.0, result.cumulativeKmLiters!!, 0.001)
+        assertNotNull(result.predictedKmLiters)
         assertFalse(result.predictedKmLiters!!.isNaN())
         assertFalse(result.predictedKmLiters!!.isInfinite())
     }

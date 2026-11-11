@@ -13,18 +13,11 @@ data class TrendPoint(
     val recordId: Long,
     val index: Int,
     val odometerKm: Double,
-    val intervalKmLiters: Double?,
-    val rlsPredictedKmLiters: Double?,
-    val cumulativeKmLiters: Double?,
-    val rollingWindowKmLiters: Double? = null
+    val rlsPredictedKmLiters: Double?
 )
 
 data class EstimationResult(
     val reliability: ReliabilityLevel = ReliabilityLevel.INSUFFICIENT_DATA,
-    val cumulativeKmLiters: Double? = null,
-    val recentKmLiters: Double? = null,
-    val rollingWindowKmLiters: Double? = null,
-    val rollingWindowMap: Map<Int, Double?> = emptyMap(),
     val predictedKmLiters: Double? = null,
     val uncertaintyMargin: Double? = null,
     val efficiencyChangeSignal: EfficiencyChangeType = EfficiencyChangeType.NONE,

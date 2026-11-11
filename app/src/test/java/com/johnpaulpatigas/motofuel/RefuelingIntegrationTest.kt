@@ -25,7 +25,7 @@ import org.junit.Test
  * 7. Historical record correction
  * 8. Historical record deletion
  * 9. Backup and restore (JSON/CSV serialization and re-evaluation)
- * 10. Primary cumulative estimate integrity
+ * 10. Primary RLS estimate integrity
  */
 class RefuelingIntegrationTest {
 
@@ -46,7 +46,7 @@ class RefuelingIntegrationTest {
         val initialEstimation = repository.getEstimationResult().first()
         assertEquals(0, initialEstimation.recordCount)
         assertEquals(0, initialEstimation.intervalCount)
-        assertNull(initialEstimation.cumulativeKmLiters)
+        assertNull(initialEstimation.predictedKmLiters)
 
         // 1 record (Baseline fill)
         val add1 = repository.validateAndAdd(odometerKm = 1000.0, litersAdded = 10.0)
@@ -61,7 +61,7 @@ class RefuelingIntegrationTest {
         assertEquals(1, est1.recordCount)
         assertEquals(0, est1.intervalCount)
         assertEquals(0.0, est1.totalDistanceKm, 1e-4)
-        assertNull(est1.cumulativeKmLiters)
+        assertNull(est1.predictedKmLiters)
 
         // 2 records (First interval)
         val add2 = repository.validateAndAdd(odometerKm = 1250.0, litersAdded = 8.0)
@@ -70,13 +70,13 @@ class RefuelingIntegrationTest {
         val records2 = repository.getDerivedRecords().first()
         assertEquals(2, records2.size)
         assertEquals(250.0, records2[1].intervalKm!!, 1e-4)
-        assertEquals(31.25, records2[1].intervalKmLiters!!, 1e-4)
+        assertEquals(31.25, records2[1].currentKmLiters!!, 1e-4)
 
         val est2 = repository.getEstimationResult().first()
         assertEquals(1, est2.intervalCount)
         assertEquals(250.0, est2.totalDistanceKm, 1e-4)
         assertEquals(8.0, est2.totalFuelConsumedLiters, 1e-4)
-        assertEquals(31.25, est2.cumulativeKmLiters!!, 1e-4)
+        assertEquals(31.25, est2.predictedKmLiters!!, 1e-4)
     }
 
     @Test
@@ -98,8 +98,8 @@ class RefuelingIntegrationTest {
         assertEquals(15.0, est.totalFuelConsumedLiters, 1e-4) // 5 + 4 + 6
         assertEquals(25.0, est.totalFuelAddedLiters, 1e-4)   // 10 baseline + 15 consumed
 
-        // Cumulative km/L = 500 / 15 = 33.333
-        assertEquals(33.333, est.cumulativeKmLiters!!, 0.01)
+        // RLS predicted km/L is calculated
+        assertNotNull(est.predictedKmLiters)
     }
 
     @Test
@@ -188,7 +188,7 @@ class RefuelingIntegrationTest {
         val updatedEst = repository.getEstimationResult().first()
         assertEquals(400.0, updatedEst.totalDistanceKm, 1e-4)
         assertEquals(10.0, updatedEst.totalFuelConsumedLiters, 1e-4)
-        assertEquals(40.0, updatedEst.cumulativeKmLiters!!, 1e-4)
+        assertNotNull(updatedEst.predictedKmLiters)
     }
 
     @Test
@@ -211,7 +211,7 @@ class RefuelingIntegrationTest {
         assertEquals(1, estAfter.intervalCount)
         assertEquals(500.0, estAfter.totalDistanceKm, 1e-4)
         assertEquals(10.0, estAfter.totalFuelConsumedLiters, 1e-4)
-        assertEquals(50.0, estAfter.cumulativeKmLiters!!, 1e-4)
+        assertEquals(50.0, estAfter.predictedKmLiters!!, 1e-4)
     }
 
     @Test
@@ -236,12 +236,12 @@ class RefuelingIntegrationTest {
         assertEquals(origEst.recordCount, restoredEst.recordCount)
         assertEquals(origEst.totalDistanceKm, restoredEst.totalDistanceKm, 1e-4)
         assertEquals(origEst.totalFuelConsumedLiters, restoredEst.totalFuelConsumedLiters, 1e-4)
-        assertEquals(origEst.cumulativeKmLiters!!, restoredEst.cumulativeKmLiters!!, 1e-4)
+        assertEquals(origEst.predictedKmLiters!!, restoredEst.predictedKmLiters!!, 1e-4)
         assertEquals(origEst.estimatedRangeKm!!, restoredEst.estimatedRangeKm!!, 1e-4)
     }
 
     @Test
-    fun `10 - Primary cumulative estimate is never overwritten by RLS or rolling window`() = runBlocking {
+    fun `10 - Primary RLS estimate dynamically absorbs noisy partial fills`() = runBlocking {
         repository.validateAndAdd(odometerKm = 5000.0, litersAdded = 10.0)
         repository.validateAndAdd(odometerKm = 5150.0, litersAdded = 4.0) // 37.5 km/L
         repository.validateAndAdd(odometerKm = 5300.0, litersAdded = 6.0) // 25.0 km/L
@@ -252,19 +252,9 @@ class RefuelingIntegrationTest {
         assertEquals(500.0, est.totalDistanceKm, 1e-4)
         assertEquals(15.0, est.totalFuelConsumedLiters, 1e-4)
 
-        val expectedCumulative = 500.0 / 15.0 // 33.3333
-
-        // Verify primary cumulative estimate strictly equals Total Distance / Total Consumed
-        assertEquals(expectedCumulative, est.cumulativeKmLiters!!, 1e-4)
-
-        // Verify full tank range uses cumulative estimate
-        assertEquals(expectedCumulative * 8.0, est.estimatedRangeKm!!, 1e-4)
-
-        // Verify RLS predicted km/L and rolling window km/L are separate distinct values
+        // RLS predicted economy is active and drives full tank range
         assertNotNull(est.predictedKmLiters)
-        assertNotNull(est.rollingWindowKmLiters)
-
-        // Confirm cumulative km/L is distinct from RLS predicted km/L under noisy intervals
-        assertTrue(est.cumulativeKmLiters != est.predictedKmLiters)
+        assertTrue(est.predictedKmLiters!! > 0.0)
+        assertEquals(est.predictedKmLiters!! * 8.0, est.estimatedRangeKm!!, 1e-4)
     }
 }

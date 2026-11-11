@@ -437,8 +437,8 @@ private fun CompactHistoryRow(
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 )
             }
-        } else if (record.cumulativeKmLiters != null || record.intervalKmLiters != null) {
-            val valKmL = record.cumulativeKmLiters ?: record.intervalKmLiters!!
+        } else if (record.currentKmLiters != null) {
+            val valKmL = record.currentKmLiters
             val semanticColors = MaterialTheme.semanticColors
 
             val (containerColor, textColor, icon) = when {

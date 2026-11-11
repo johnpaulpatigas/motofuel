@@ -38,14 +38,14 @@ import com.johnpaulpatigas.motofuel.data.model.ReliabilityLevel
 import com.johnpaulpatigas.motofuel.ui.theme.semanticColors
 
 /**
- * Hero card displaying overall fuel economy (km/L) and target progress.
+ * Hero card displaying current fuel economy (km/L) and target progress.
  */
 @Composable
 fun DashboardHeroCard(
     estimation: EstimationResult,
     modifier: Modifier = Modifier
 ) {
-    val overall = estimation.cumulativeKmLiters
+    val overall = estimation.predictedKmLiters
     val target = estimation.targetKmLiters
     val diff = estimation.efficiencyVsTarget
     val intervalCount = estimation.intervalCount
@@ -144,8 +144,9 @@ fun DashboardHeroCard(
 
                 if (totalDist > 0.0) {
                     Spacer(modifier = Modifier.height(4.dp))
+                    val marginStr = estimation.uncertaintyMargin?.let { " (±${com.johnpaulpatigas.motofuel.util.FormatUtils.formatOneDecimal(it)} km/L)" } ?: ""
                     Text(
-                        text = "Average across ${com.johnpaulpatigas.motofuel.util.FormatUtils.formatKm(totalDist)} km total distance",
+                        text = "Current estimated efficiency across ${com.johnpaulpatigas.motofuel.util.FormatUtils.formatKm(totalDist)} km$marginStr",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
