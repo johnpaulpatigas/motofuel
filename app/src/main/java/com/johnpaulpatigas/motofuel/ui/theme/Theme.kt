@@ -66,6 +66,48 @@ val darkSemanticColors = AppSemanticColors(
     onCriticalContainer = onSemanticCriticalContainerDark,
 )
 
+/**
+ * Creates dynamic AppSemanticColors derived from the active dynamic [ColorScheme].
+ * Maps dynamic tertiary to 'good', dynamic error to 'critical', and harmonized
+ * tones for 'warning', ensuring full harmony with Material You wallpaper palettes.
+ */
+fun dynamicSemanticColors(
+    colorScheme: androidx.compose.material3.ColorScheme,
+    darkTheme: Boolean
+): AppSemanticColors {
+    return if (darkTheme) {
+        AppSemanticColors(
+            good = colorScheme.tertiary,
+            onGood = colorScheme.onTertiary,
+            goodContainer = colorScheme.tertiaryContainer,
+            onGoodContainer = colorScheme.onTertiaryContainer,
+            warning = semanticWarningDark,
+            onWarning = onSemanticWarningDark,
+            warningContainer = semanticWarningContainerDark,
+            onWarningContainer = onSemanticWarningContainerDark,
+            critical = colorScheme.error,
+            onCritical = colorScheme.onError,
+            criticalContainer = colorScheme.errorContainer,
+            onCriticalContainer = colorScheme.onErrorContainer
+        )
+    } else {
+        AppSemanticColors(
+            good = colorScheme.tertiary,
+            onGood = colorScheme.onTertiary,
+            goodContainer = colorScheme.tertiaryContainer,
+            onGoodContainer = colorScheme.onTertiaryContainer,
+            warning = semanticWarningLight,
+            onWarning = onSemanticWarningLight,
+            warningContainer = semanticWarningContainerLight,
+            onWarningContainer = onSemanticWarningContainerLight,
+            critical = colorScheme.error,
+            onCritical = colorScheme.onError,
+            criticalContainer = colorScheme.errorContainer,
+            onCriticalContainer = colorScheme.onErrorContainer
+        )
+    }
+}
+
 val LocalAppSemanticColors = staticCompositionLocalOf { lightSemanticColors }
 
 val MaterialTheme.semanticColors: AppSemanticColors
@@ -161,8 +203,10 @@ fun MotoFuelTheme(
         com.johnpaulpatigas.motofuel.data.model.AppTheme.DARK -> true
     }
 
+    val isDynamicActive = dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+
     val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+        isDynamicActive -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
@@ -170,7 +214,11 @@ fun MotoFuelTheme(
         else -> lightScheme
     }
 
-    val semanticColors = if (darkTheme) darkSemanticColors else lightSemanticColors
+    val semanticColors = when {
+        isDynamicActive -> dynamicSemanticColors(colorScheme, darkTheme)
+        darkTheme -> darkSemanticColors
+        else -> lightSemanticColors
+    }
 
     val view = LocalView.current
     if (!view.isInEditMode) {
