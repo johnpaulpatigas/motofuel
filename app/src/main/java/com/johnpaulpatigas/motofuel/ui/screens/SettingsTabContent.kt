@@ -126,7 +126,6 @@ fun SettingsTabContent(
             )
         }
 
-        // Section 1: Appearance
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.large,
@@ -184,7 +183,6 @@ fun SettingsTabContent(
             }
         }
 
-        // Section 2: Motorcycle Configuration & Goal
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.large,
@@ -344,7 +342,6 @@ fun SettingsTabContent(
             }
         }
 
-        // Section 3: Data Backup & Import
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.large,
@@ -439,7 +436,6 @@ fun SettingsTabContent(
             }
         }
 
-        // Section 4: Local Storage Management
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.large,
@@ -499,7 +495,6 @@ fun SettingsTabContent(
             }
         }
 
-        // Section 5: App & Engine Specs
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.large,

@@ -15,7 +15,7 @@ import org.junit.Before
 import org.junit.Test
 
 /**
- * Production Integration Test Suite validating fifth-stage requirements:
+ * Integration Test Suite for MotoFuel repository and estimation flows:
  * 1. Initial refueling records
  * 2. Normal partial refueling
  * 3. Efficiency deterioration (CUSUM drop signal)
@@ -25,9 +25,9 @@ import org.junit.Test
  * 7. Historical record correction
  * 8. Historical record deletion
  * 9. Backup and restore (JSON/CSV serialization and re-evaluation)
- * 10. Authoritative primary cumulative estimate integrity (never replaced by RLS or rolling window)
+ * 10. Primary cumulative estimate integrity
  */
-class FifthStageIntegrationTest {
+class RefuelingIntegrationTest {
 
     private lateinit var dao: FakeRefuelingDao
     private lateinit var repository: RefuelingRepositoryImpl
@@ -98,7 +98,7 @@ class FifthStageIntegrationTest {
         assertEquals(15.0, est.totalFuelConsumedLiters, 1e-4) // 5 + 4 + 6
         assertEquals(25.0, est.totalFuelAddedLiters, 1e-4)   // 10 baseline + 15 consumed
 
-        // Authoritative Cumulative km/L = 500 / 15 = 33.333
+        // Cumulative km/L = 500 / 15 = 33.333
         assertEquals(33.333, est.cumulativeKmLiters!!, 0.01)
     }
 
@@ -241,7 +241,7 @@ class FifthStageIntegrationTest {
     }
 
     @Test
-    fun `10 - Authoritative primary cumulative estimate is never overwritten by RLS or rolling window`() = runBlocking {
+    fun `10 - Primary cumulative estimate is never overwritten by RLS or rolling window`() = runBlocking {
         repository.validateAndAdd(odometerKm = 5000.0, litersAdded = 10.0)
         repository.validateAndAdd(odometerKm = 5150.0, litersAdded = 4.0) // 37.5 km/L
         repository.validateAndAdd(odometerKm = 5300.0, litersAdded = 6.0) // 25.0 km/L

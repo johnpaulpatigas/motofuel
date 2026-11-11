@@ -76,7 +76,6 @@ fun AddEditRecordDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Field 1: Odometer Reading (km)
                 OutlinedTextField(
                     value = odometerText,
                     onValueChange = { odometerText = it },
@@ -111,7 +110,6 @@ fun AddEditRecordDialog(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Field 2: Fuel Added (liters)
                 OutlinedTextField(
                     value = litersText,
                     onValueChange = { litersText = it },
@@ -140,7 +138,6 @@ fun AddEditRecordDialog(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Field 3: Price Per Liter (optional)
                 OutlinedTextField(
                     value = priceText,
                     onValueChange = { priceText = it },

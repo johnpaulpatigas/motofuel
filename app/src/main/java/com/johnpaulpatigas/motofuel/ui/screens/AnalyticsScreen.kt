@@ -84,24 +84,20 @@ fun AnalyticsScreen(
             )
         }
 
-        // 1. Top Section: Analytics Summary Cards
         AnalyticsSummaryRow(
             records = uiState.records,
             cumulativeKmLiters = uiState.estimation.cumulativeKmLiters
         )
 
-        // 2. Efficiency Change Alert Card (when CUSUM change signal is active)
         EfficiencyChangeCard(
             signal = uiState.estimation.efficiencyChangeSignal
         )
 
-        // 3. Fuel Economy Trend Line Chart
         FuelTrendChart(
             trendPoints = uiState.estimation.trendPoints,
             targetKmLiters = uiState.estimation.targetKmLiters
         )
 
-        // 4. Complete Refueling Logs List (Grouped by Month)
         RefuelingHistoryList(
             records = uiState.records,
             targetKmLiters = uiState.estimation.targetKmLiters,

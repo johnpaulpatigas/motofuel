@@ -50,8 +50,7 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
- * Hero card prominently displaying the motorcycle's single authoritative fuel economy (km/L)
- * and target progress with statistical confidence status.
+ * Hero card displaying overall fuel economy (km/L) and target progress with statistical confidence.
  */
 @Composable
 fun DashboardHeroCard(
@@ -84,7 +83,6 @@ fun DashboardHeroCard(
                 .fillMaxWidth()
                 .padding(22.dp)
         ) {
-            // Header Row: Icon & Label | Confidence Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -125,7 +123,6 @@ fun DashboardHeroCard(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // Main Display: Authoritative Cumulative Fuel Economy
             if (overall != null && estimation.reliability != ReliabilityLevel.INSUFFICIENT_DATA) {
                 Row(
                     verticalAlignment = Alignment.Bottom,

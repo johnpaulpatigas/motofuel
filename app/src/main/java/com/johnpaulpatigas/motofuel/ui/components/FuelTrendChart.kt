@@ -324,13 +324,13 @@ fun FuelTrendChart(
                     val chartWidth = size.width - leftMargin - rightMargin
                     val chartHeight = size.height - topMargin - bottomMargin
 
-                    // 1. Draw Y-Axis Title
+                    // Y-Axis Title
                     drawText(
                         textLayoutResult = yAxisHeader,
                         topLeft = Offset(4.dp.toPx(), 2.dp.toPx())
                     )
 
-                    // 2. Horizontal Grid Lines
+                    // Horizontal Grid Lines
                     for (i in 0..yGridSteps) {
                         val fraction = i.toFloat() / yGridSteps
                         val yPos = topMargin + chartHeight * (1f - fraction)
@@ -352,7 +352,7 @@ fun FuelTrendChart(
                         }
                     }
 
-                    // 3. Target Goal Line
+                    // Target Goal Line
                     if (targetKmLiters > 0.0 && targetKmLiters in yMin..yMax && targetGoalText != null) {
                         val targetYRatio = ((targetKmLiters - yMin) / (yMax - yMin)).toFloat()
                         val targetY = topMargin + chartHeight * (1f - targetYRatio)
@@ -371,7 +371,7 @@ fun FuelTrendChart(
                         )
                     }
 
-                    // 4. Authoritative Cumulative Fuel Economy Series Line
+                    // Cumulative Fuel Economy Line
                     val cumulativeOffsets = trendPoints.map { pt ->
                         val valItem = pt.cumulativeKmLiters ?: return@map null
                         val xRatio = ((pt.odometerKm - xMin) / (xMax - xMin)).toFloat().coerceIn(0f, 1f)

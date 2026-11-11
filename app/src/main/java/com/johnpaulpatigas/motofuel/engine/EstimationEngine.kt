@@ -197,8 +197,7 @@ class EstimationEngine(
         }
         val finalCusumState = cusumStates.lastOrNull() ?: CusumState()
 
-        // Vehicle Setup & Cost Metrics
-        // Authoritative long-term cumulative estimator drives theoretical full-tank range
+        // Overall cumulative estimator drives full-tank range
         val estimatedRangeKm = if (tankCapacityLiters > 0.0 && cumulativeKmLiters != null && cumulativeKmLiters > 0.0) {
             cumulativeKmLiters * tankCapacityLiters
         } else null

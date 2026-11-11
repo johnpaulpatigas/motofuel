@@ -325,7 +325,7 @@ private fun CompactHistoryRow(
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 1. Leading Tonal Icon Box
+        // Leading Icon Box
         Surface(
             shape = MaterialTheme.shapes.small,
             color = if (record.isBaseline) MaterialTheme.colorScheme.secondaryContainer
@@ -345,7 +345,7 @@ private fun CompactHistoryRow(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // 2. Middle: Odometer headline + detail subhead
+        // Odometer reading & detail info
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -377,7 +377,7 @@ private fun CompactHistoryRow(
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // 3. Trailing: Efficiency Badge & Menu
+        // Efficiency Badge & Menu
         if (record.isBaseline) {
             Surface(
                 shape = MaterialTheme.shapes.extraSmall,

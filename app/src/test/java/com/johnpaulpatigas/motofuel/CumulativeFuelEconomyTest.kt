@@ -12,12 +12,12 @@ import org.junit.Before
 import org.junit.Test
 
 /**
- * Unit test suite verifying MotoFuel's One Authoritative Fuel Economy core requirements:
+ * Unit test suite verifying MotoFuel's cumulative fuel economy logic:
  * 1. Primary user-facing fuel economy calculation is strictly cumulativeKmLiters = totalDistanceKm / totalConsumedFuelLiters.
- * 2. Supporting statistics (full-tank range, cost per km, target efficiency delta) derive strictly from the cumulative estimate.
- * 3. Hidden estimators (RLS, rolling window) do not overwrite or replace the authoritative primary value.
+ * 2. Supporting statistics (full-tank range, cost per km, target efficiency delta) derive from the cumulative estimate.
+ * 3. Secondary estimators (RLS, rolling window) do not overwrite or replace the primary cumulative value.
  */
-class AuthoritativeFuelEconomyTest {
+class CumulativeFuelEconomyTest {
 
     private lateinit var dao: FakeRefuelingDao
     private lateinit var repository: RefuelingRepositoryImpl
@@ -52,7 +52,7 @@ class AuthoritativeFuelEconomyTest {
     }
 
     @Test
-    fun `estimatedRangeKm and efficiencyVsTarget derive strictly from authoritative cumulative estimate`() = runBlocking {
+    fun `estimatedRangeKm and efficiencyVsTarget derive strictly from cumulative estimate`() = runBlocking {
         repository.validateAndAdd(odometerKm = 5000.0, litersAdded = 12.0)
         repository.validateAndAdd(odometerKm = 5300.0, litersAdded = 10.0) // +300 km, 10 L = 30 km/L
         repository.validateAndAdd(odometerKm = 5700.0, litersAdded = 10.0) // +400 km, 10 L = 40 km/L
