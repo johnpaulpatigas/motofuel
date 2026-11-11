@@ -64,6 +64,7 @@ fun RefuelingHistoryList(
     currencySymbol: String = "₱"
 ) {
     var expandedMonths by remember { mutableStateOf(setOf<String>()) }
+    var showAllLogs by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -71,29 +72,49 @@ fun RefuelingHistoryList(
             .animateContentSize()
     ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(vertical = 4.dp)
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                shape = MaterialTheme.shapes.small,
-                color = MaterialTheme.colorScheme.secondaryContainer,
-                modifier = Modifier.size(32.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(vertical = 4.dp)
             ) {
-                Box(contentAlignment = Alignment.Center) {
+                Surface(
+                    shape = MaterialTheme.shapes.small,
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.History,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = if (maxItems != null) "Recent Activity" else "Refueling Logs (${records.size})",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            if (maxItems == null && records.size > 3) {
+                IconButton(
+                    onClick = { showAllLogs = !showAllLogs },
+                    modifier = Modifier.size(36.dp)
+                ) {
                     Icon(
-                        imageVector = Icons.Default.History,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.size(18.dp)
+                        imageVector = if (showAllLogs) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (showAllLogs) "Show last 3 refuels" else "Show all ${records.size} refuels",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(
-                text = if (maxItems != null) "Recent Activity" else "Refueling Logs (${records.size})",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
         }
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -127,33 +148,53 @@ fun RefuelingHistoryList(
                 }
             }
         } else {
-            if (maxItems != null) {
-                // Overview / Recent mode - grouped container card
-                val displayRecords = remember(records, maxItems) { records.reversed().take(maxItems) }
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.large,
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                ) {
-                    Column {
-                        displayRecords.forEachIndexed { index, record ->
-                            androidx.compose.runtime.key(record.id) {
-                                CompactHistoryRow(
-                                    record = record,
-                                    targetKmLiters = targetKmLiters,
-                                    onEditClick = onEditClick,
-                                    onDeleteClick = onDeleteClick
-                                )
-                                if (index < displayRecords.lastIndex) {
-                                    HorizontalDivider(
-                                        modifier = Modifier.padding(horizontal = 14.dp),
-                                        color = MaterialTheme.colorScheme.outlineVariant
+            val limitTo3 = maxItems != null || (!showAllLogs && records.size > 3)
+
+            if (limitTo3) {
+                val effectiveLimit = maxItems ?: 3
+                val displayRecords = remember(records, effectiveLimit) { records.reversed().take(effectiveLimit) }
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.large,
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Column {
+                            displayRecords.forEachIndexed { index, record ->
+                                androidx.compose.runtime.key(record.id) {
+                                    CompactHistoryRow(
+                                        record = record,
+                                        targetKmLiters = targetKmLiters,
+                                        onEditClick = onEditClick,
+                                        onDeleteClick = onDeleteClick
                                     )
+                                    if (index < displayRecords.lastIndex) {
+                                        HorizontalDivider(
+                                            modifier = Modifier.padding(horizontal = 14.dp),
+                                            color = MaterialTheme.colorScheme.outlineVariant
+                                        )
+                                    }
                                 }
                             }
+                        }
+                    }
+
+                    if (maxItems == null && records.size > 3) {
+                        androidx.compose.material3.FilledTonalButton(
+                            onClick = { showAllLogs = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = androidx.compose.foundation.shape.CircleShape
+                        ) {
+                            Text("Show All ${records.size} Logs", fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Icon(
+                                imageVector = Icons.Default.ExpandMore,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                     }
                 }
@@ -168,7 +209,7 @@ fun RefuelingHistoryList(
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     groupedRecords.forEach { (monthHeader, monthRecords) ->
                         val isExpanded = expandedMonths.contains(monthHeader)
-                        val displayMonthRecords = if (isExpanded || monthRecords.size <= 5) monthRecords else monthRecords.take(5)
+                        val displayMonthRecords = if (isExpanded || monthRecords.size <= 3) monthRecords else monthRecords.take(3)
                         val totalMonthCost = monthRecords.sumOf { it.totalCost ?: 0.0 }
                         val totalMonthDistance = monthRecords.sumOf { it.intervalKm ?: 0.0 }
 
@@ -253,7 +294,7 @@ fun RefuelingHistoryList(
                                         }
                                     }
 
-                                    if (monthRecords.size > 5) {
+                                    if (monthRecords.size > 3) {
                                         IconButton(
                                             onClick = {
                                                 expandedMonths = if (isExpanded) {
