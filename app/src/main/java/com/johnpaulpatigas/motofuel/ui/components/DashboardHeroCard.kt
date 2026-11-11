@@ -36,7 +36,6 @@ import androidx.compose.ui.unit.sp
 import com.johnpaulpatigas.motofuel.data.model.EstimationResult
 import com.johnpaulpatigas.motofuel.data.model.ReliabilityLevel
 import com.johnpaulpatigas.motofuel.ui.theme.semanticColors
-import kotlin.math.roundToInt
 
 /**
  * Hero card displaying overall fuel economy (km/L) and target progress.

@@ -27,7 +27,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.johnpaulpatigas.motofuel.data.model.EstimationResult
-import kotlin.math.roundToInt
 
 /**
  * Summary grid displaying supporting motorcycle metrics:

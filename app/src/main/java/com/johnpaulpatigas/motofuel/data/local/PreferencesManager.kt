@@ -1,6 +1,7 @@
 package com.johnpaulpatigas.motofuel.data.local
 
 import android.content.Context
+import androidx.core.content.edit
 import com.johnpaulpatigas.motofuel.data.model.AppTheme
 
 /**
@@ -20,25 +21,25 @@ class PreferencesManager(context: Context) {
             }
         }
         set(value) {
-            prefs.edit().putString(KEY_APP_THEME, value.name).apply()
+            prefs.edit { putString(KEY_APP_THEME, value.name) }
         }
 
     var tankCapacityLiters: Double
         get() = prefs.getFloat(KEY_TANK_CAPACITY, 0.0f).toDouble()
         set(value) {
-            prefs.edit().putFloat(KEY_TANK_CAPACITY, value.toFloat()).apply()
+            prefs.edit { putFloat(KEY_TANK_CAPACITY, value.toFloat()) }
         }
 
     var targetKmLiters: Double
         get() = prefs.getFloat(KEY_TARGET_KM_LITERS, 0.0f).toDouble()
         set(value) {
-            prefs.edit().putFloat(KEY_TARGET_KM_LITERS, value.toFloat()).apply()
+            prefs.edit { putFloat(KEY_TARGET_KM_LITERS, value.toFloat()) }
         }
 
     var currencySymbol: String
         get() = prefs.getString(KEY_CURRENCY_SYMBOL, "₱") ?: "₱"
         set(value) {
-            prefs.edit().putString(KEY_CURRENCY_SYMBOL, value).apply()
+            prefs.edit { putString(KEY_CURRENCY_SYMBOL, value) }
         }
 
     companion object {

@@ -1,54 +1,10 @@
 <resources>
     <string name="app_name">MotoFuel</string>
 
-    <!-- Navigation -->
-    <string name="nav_overview">Overview</string>
-    <string name="nav_analytics">Analytics</string>
-    <string name="nav_settings">Settings</string>
-    <string name="action_log_refuel">Log Refuel</string>
-
-    <!-- Overview Screen -->
-    <string name="metric_overall_cumulative_efficiency">OVERALL CUMULATIVE EFFICIENCY</string>
-    <string name="metric_unit_kml">km/L</string>
-    <string name="hero_refuels_logged">%1$d refuels logged</string>
-    <string name="hero_average_across_distance">Average across %1$s km total distance</string>
-    <string name="hero_target_goal">Target: %1$s km/L</string>
-    <string name="hero_vs_goal">%1$s km/L vs goal</string>
-    <string name="hero_empty_title">--- km/L</string>
-    <string name="hero_empty_description">Add at least 2 refueling entries to start calculating fuel economy.</string>
-
-    <!-- Metrics Grid -->
-    <string name="section_metrics_overview">METRICS OVERVIEW</string>
-    <string name="stat_full_tank_range">Full Tank Range</string>
-    <string name="stat_fuel_spend">Fuel Spend</string>
-    <string name="stat_cost_per_km">Cost per Kilometer</string>
-    <string name="stat_total_distance">Total Distance</string>
-    <string name="stat_subtitle_on_tank">On %1$s L tank</string>
-    <string name="stat_subtitle_set_capacity">Set capacity in Settings →</string>
-    <string name="stat_subtitle_total_spent">Total spent</string>
-    <string name="stat_subtitle_average_cost">Average cost</string>
-    <string name="stat_subtitle_since_baseline">Since baseline</string>
-
-    <!-- Refueling Form Bottom Sheet -->
-    <string name="sheet_title_add">Add Refueling Log</string>
-    <string name="sheet_title_edit">Edit Refueling Log</string>
-    <string name="sheet_desc_add">Enter your current dash odometer reading and total fuel added at the pump.</string>
-    <string name="sheet_desc_edit">Modify the odometer reading and liters filled.</string>
-    <string name="field_odometer">Odometer Reading</string>
-    <string name="field_fuel_added">Fuel Added</string>
-    <string name="field_price_per_liter">Price per Liter (Optional)</string>
-    <string name="field_estimated_total_cost">Estimated Total Cost</string>
-    <string name="action_add_record">Add Record</string>
-    <string name="action_save_changes">Save Changes</string>
     <string name="action_cancel">Cancel</string>
 
     <!-- Delete Confirm Dialog -->
     <string name="dialog_delete_title">Delete Refueling Record?</string>
     <string name="dialog_delete_message">Are you sure you want to delete the record at %1$s km (%2$s L)?\n\nDeleting this record will automatically recalculate interval distances for adjacent records and rebuild model statistics.</string>
     <string name="dialog_delete_action">Delete</string>
-
-    <!-- Clear All Dialog -->
-    <string name="dialog_clear_all_title">Wipe All Refueling Logs?</string>
-    <string name="dialog_clear_all_message">This action cannot be undone. All your saved refueling records, statistical baselines, and historical economy models will be permanently deleted from this device.</string>
-    <string name="dialog_clear_all_action">Clear All Records</string>
 </resources>

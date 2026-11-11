@@ -1,7 +1,6 @@
 package com.johnpaulpatigas.motofuel.ui.theme
 
 import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -203,7 +202,7 @@ fun MotoFuelTheme(
         com.johnpaulpatigas.motofuel.data.model.AppTheme.DARK -> true
     }
 
-    val isDynamicActive = dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val isDynamicActive = dynamicColor
 
     val colorScheme = when {
         isDynamicActive -> {

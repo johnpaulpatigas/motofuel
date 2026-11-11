@@ -60,8 +60,8 @@ import kotlin.math.abs
 @Composable
 fun FuelTrendChart(
     trendPoints: List<TrendPoint>,
-    targetKmLiters: Double = 0.0,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    targetKmLiters: Double = 0.0
 ) {
     val haptic = LocalHapticFeedback.current
     val typography = MaterialTheme.typography
