@@ -37,6 +37,7 @@ fun DeleteConfirmDialog(
         confirmButton = {
             Button(
                 onClick = onConfirm,
+                shape = androidx.compose.foundation.shape.CircleShape,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.error,
                     contentColor = MaterialTheme.colorScheme.onError

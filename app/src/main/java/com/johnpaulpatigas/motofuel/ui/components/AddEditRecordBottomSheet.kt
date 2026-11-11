@@ -207,7 +207,7 @@ fun AddEditRecordBottomSheet(
                 OutlinedButton(
                     onClick = onDismiss,
                     modifier = Modifier.weight(1f),
-                    shape = MaterialTheme.shapes.medium
+                    shape = androidx.compose.foundation.shape.CircleShape
                 ) {
                     Text("Cancel")
                 }
@@ -216,7 +216,7 @@ fun AddEditRecordBottomSheet(
                     onClick = { onSave(odometerText, litersText, priceText.ifBlank { null }) },
                     enabled = odoWarning == null,
                     modifier = Modifier.weight(1f),
-                    shape = MaterialTheme.shapes.medium
+                    shape = androidx.compose.foundation.shape.CircleShape
                 ) {
                     Text(
                         text = if (isEdit) "Save Changes" else "Add Record",

@@ -115,7 +115,7 @@ fun OverviewScreen(
                 FilledTonalButton(
                     onClick = onNavigateToLogs,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium
+                    shape = androidx.compose.foundation.shape.CircleShape
                 ) {
                     Text("View Analytics & All ${uiState.records.size} Logs →", fontWeight = FontWeight.Bold)
                 }

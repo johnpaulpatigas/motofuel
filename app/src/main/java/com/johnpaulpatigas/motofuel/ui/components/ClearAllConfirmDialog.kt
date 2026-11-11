@@ -62,6 +62,7 @@ fun ClearAllConfirmDialog(
             Button(
                 onClick = onConfirm,
                 enabled = isTypedCorrectly,
+                shape = androidx.compose.foundation.shape.CircleShape,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.error,
                     contentColor = MaterialTheme.colorScheme.onError

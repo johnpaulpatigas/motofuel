@@ -319,7 +319,8 @@ fun SettingsTabContent(
                                     }
                                 },
                                 enabled = tankError == null && targetError == null,
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                shape = androidx.compose.foundation.shape.CircleShape
                             ) {
                                 Text("Save Settings", fontWeight = FontWeight.Bold)
                             }
@@ -331,7 +332,8 @@ fun SettingsTabContent(
                                     focusManager.clearFocus()
                                     keyboardController?.hide()
                                 },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                shape = androidx.compose.foundation.shape.CircleShape
                             ) {
                                 Text("Cancel")
                             }
@@ -393,7 +395,8 @@ fun SettingsTabContent(
                 ) {
                     OutlinedButton(
                         onClick = { exportJsonLauncher.launch("motofuel_backup.json") },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        shape = androidx.compose.foundation.shape.CircleShape
                     ) {
                         Icon(
                             imageVector = Icons.Default.Download,
@@ -406,7 +409,8 @@ fun SettingsTabContent(
 
                     OutlinedButton(
                         onClick = { exportCsvLauncher.launch("motofuel_export.csv") },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        shape = androidx.compose.foundation.shape.CircleShape
                     ) {
                         Icon(
                             imageVector = Icons.Default.Download,
@@ -422,7 +426,8 @@ fun SettingsTabContent(
 
                 OutlinedButton(
                     onClick = { importLauncher.launch(arrayOf("application/json", "text/csv", "text/plain", "*/*")) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.CircleShape
                 ) {
                     Icon(
                         imageVector = Icons.Default.Upload,
@@ -483,7 +488,8 @@ fun SettingsTabContent(
 
                 OutlinedButton(
                     onClick = { viewModel.openClearAllDialog() },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.CircleShape
                 ) {
                     Text(
                         text = "Clear All Records",
