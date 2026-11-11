@@ -121,7 +121,11 @@ fun DashboardScreen(
             ) { page ->
                 when (page) {
                     0 -> OverviewScreen(
-                        uiState = uiState
+                        uiState = uiState,
+                        onNavigateToSettings = {
+                            selectedTab = 2
+                            coroutineScope.launch { pagerState.animateScrollToPage(2) }
+                        }
                     )
                     1 -> AnalyticsScreen(
                         uiState = uiState,

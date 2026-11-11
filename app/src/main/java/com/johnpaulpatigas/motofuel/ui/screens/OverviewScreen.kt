@@ -35,7 +35,8 @@ import com.johnpaulpatigas.motofuel.ui.viewmodel.FuelUiState
 @Composable
 fun OverviewScreen(
     uiState: FuelUiState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateToSettings: () -> Unit = {}
 ) {
     Column(
         modifier = modifier
@@ -84,7 +85,8 @@ fun OverviewScreen(
         )
 
         StatsSummaryGrid(
-            estimation = uiState.estimation
+            estimation = uiState.estimation,
+            onNavigateToSettings = onNavigateToSettings
         )
 
         Spacer(modifier = Modifier.height(80.dp))

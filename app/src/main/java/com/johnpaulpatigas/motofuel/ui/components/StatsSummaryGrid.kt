@@ -36,7 +36,8 @@ import kotlin.math.roundToInt
 @Composable
 fun StatsSummaryGrid(
     estimation: EstimationResult,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateToSettings: () -> Unit = {}
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -56,15 +57,18 @@ fun StatsSummaryGrid(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            val isCapacityUnset = estimation.tankCapacityLiters <= 0.0
             StatCard(
                 title = "Full Tank Range",
                 value = estimation.estimatedRangeKm?.let { "~${com.johnpaulpatigas.motofuel.util.FormatUtils.formatKm(it)} km" } ?: "---",
-                subtitle = if (estimation.tankCapacityLiters > 0.0) {
+                subtitle = if (!isCapacityUnset) {
                     "On ${com.johnpaulpatigas.motofuel.util.FormatUtils.formatOneDecimalClean(estimation.tankCapacityLiters)} L tank"
                 } else {
-                    "Set capacity in Settings"
+                    "Set capacity in Settings →"
                 },
                 icon = Icons.AutoMirrored.Filled.DirectionsBike,
+                onClick = if (isCapacityUnset) onNavigateToSettings else null,
+                subtitleColor = if (isCapacityUnset) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f)
             )
 
@@ -107,14 +111,26 @@ private fun StatCard(
     value: String,
     subtitle: String,
     icon: ImageVector,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    subtitleColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurfaceVariant
 ) {
+    val cardColors = if (onClick != null) {
+        CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        )
+    } else {
+        CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        )
+    }
+
     Card(
         modifier = modifier,
+        onClick = onClick ?: {},
+        enabled = onClick != null,
         shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
-        ),
+        colors = cardColors,
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
@@ -163,7 +179,8 @@ private fun StatCard(
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = subtitleColor,
+                fontWeight = if (onClick != null) FontWeight.SemiBold else FontWeight.Normal
             )
         }
     }
