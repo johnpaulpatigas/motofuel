@@ -34,7 +34,6 @@ interface RefuelingRepository {
     ): ValidationResult
     suspend fun deleteRecord(id: Long)
     suspend fun deleteAllRecords()
-    suspend fun getRecordById(id: Long): RefuelingRecord?
 
     suspend fun exportDataJson(): String
     suspend fun importDataJson(jsonStr: String): ValidationResult

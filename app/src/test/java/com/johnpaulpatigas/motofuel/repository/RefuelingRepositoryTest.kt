@@ -51,12 +51,6 @@ class FakeRefuelingDao : RefuelingDao {
         } else 0
     }
 
-    override suspend fun delete(entity: RefuelingEntity): Int {
-        val removed = records.removeAll { it.id == entity.id }
-        if (removed) emit()
-        return if (removed) 1 else 0
-    }
-
     override suspend fun deleteById(id: Long): Int {
         val removed = records.removeAll { it.id == id }
         if (removed) emit()

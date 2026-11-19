@@ -1,7 +1,6 @@
 package com.johnpaulpatigas.motofuel.data.local
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -28,9 +27,6 @@ interface RefuelingDao {
 
     @Update
     suspend fun update(entity: RefuelingEntity): Int
-
-    @Delete
-    suspend fun delete(entity: RefuelingEntity): Int
 
     @Query("DELETE FROM refueling_records WHERE id = :id")
     suspend fun deleteById(id: Long): Int

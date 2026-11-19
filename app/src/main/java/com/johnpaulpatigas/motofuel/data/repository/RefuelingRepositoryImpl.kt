@@ -129,13 +129,6 @@ class RefuelingRepositoryImpl(
         Unit
     }
 
-    override suspend fun getRecordById(id: Long): RefuelingRecord? = withContext(dispatcher) {
-        val entity = dao.getById(id) ?: return@withContext null
-        val allEntities = dao.getAllChronologicalList()
-        val derivedList = engine.computeDerivedRecords(allEntities)
-        derivedList.firstOrNull { it.id == entity.id }
-    }
-
     override suspend fun exportDataJson(): String = withContext(dispatcher) {
         val entities = dao.getAllChronologicalList()
         com.johnpaulpatigas.motofuel.data.local.DataExporter.exportToJson(entities)
