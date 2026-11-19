@@ -163,11 +163,13 @@ fun FuelTrendChart(
                 val rawMinOdo = trendPoints.minOf { it.odometerKm }
                 val rawMaxOdo = trendPoints.maxOf { it.odometerKm }
 
-                val minVal = allValues.minOrNull() ?: 10.0
-                val maxVal = allValues.maxOrNull() ?: 50.0
+                val candidates = if (targetKmLiters > 0.0) allValues + targetKmLiters else allValues
+                val rawMin = candidates.minOrNull() ?: 10.0
+                val rawMax = candidates.maxOrNull() ?: 50.0
+                val padding = if (rawMax == rawMin) 5.0 else (rawMax - rawMin) * 0.1
 
-                val yMin = minVal.coerceAtLeast(0.0)
-                val yMax = if (maxVal == minVal) maxVal + 10.0 else maxVal
+                val yMin = (rawMin - padding).coerceAtLeast(0.0)
+                val yMax = rawMax + padding
                 val xMin = rawMinOdo
                 val xMax = if (rawMaxOdo == rawMinOdo) rawMaxOdo + 10.0 else rawMaxOdo
 
