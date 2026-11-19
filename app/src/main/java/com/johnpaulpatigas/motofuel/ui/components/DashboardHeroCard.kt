@@ -103,7 +103,7 @@ fun DashboardHeroCard(
                 }
 
                 val recordCount = estimation.recordCount
-                if (overall != null && recordCount > 0) {
+                if (recordCount > 0) {
                     Surface(
                         shape = MaterialTheme.shapes.small,
                         color = MaterialTheme.colorScheme.surfaceContainerHighest
