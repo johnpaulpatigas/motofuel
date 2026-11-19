@@ -138,6 +138,13 @@ class RefuelingRepositoryImpl(
             if (imported.isEmpty()) {
                 return@withContext ValidationResult.Error("No valid refueling records found in imported JSON file.")
             }
+            for (i in 1 until imported.size) {
+                if (imported[i].odometerKm <= imported[i - 1].odometerKm) {
+                    return@withContext ValidationResult.Error(
+                        "Import failed: Odometer reading at entry #${i + 1} (${imported[i].odometerKm} km) is not greater than previous entry (${imported[i - 1].odometerKm} km)."
+                    )
+                }
+            }
             dao.deleteAll()
             for (entity in imported) {
                 dao.insert(entity)

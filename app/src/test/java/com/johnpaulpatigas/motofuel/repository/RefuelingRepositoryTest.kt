@@ -152,4 +152,23 @@ class RefuelingRepositoryTest {
         assertEquals(0, estimationAfter.intervalCount)
         assertEquals(0.0, estimationAfter.totalDistanceKm, 0.001)
     }
+
+    @Test
+    fun `importDataJson - rejects non-increasing odometer records without wiping existing data`() = runBlocking {
+        repository.validateAndAdd(odometerKm = 1000.0, litersAdded = 10.0)
+
+        val invalidJson = """
+            [
+              {"id": 1, "odometerKm": 1500.0, "litersAdded": 5.0, "timestamp": 1000},
+              {"id": 2, "odometerKm": 1400.0, "litersAdded": 6.0, "timestamp": 2000}
+            ]
+        """.trimIndent()
+
+        val result = repository.importDataJson(invalidJson)
+        assertTrue(result is ValidationResult.Error)
+
+        val existingRecords = repository.getDerivedRecords().first()
+        assertEquals(1, existingRecords.size)
+        assertEquals(1000.0, existingRecords[0].odometerKm, 0.001)
+    }
 }
