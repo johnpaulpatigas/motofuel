@@ -41,7 +41,7 @@ fun ClearAllConfirmDialog(
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "This will permanently wipe all refueling logs and reset fuel economy estimates.\n\nWe recommend exporting a JSON or CSV backup first.\n\nTo confirm deletion, type DELETE below:",
+                    text = "This will permanently wipe all refueling logs and reset fuel economy estimates.\n\nWe recommend exporting a JSON backup first.\n\nTo confirm deletion, type DELETE below:",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

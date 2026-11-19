@@ -156,25 +156,4 @@ class RefuelingRepositoryImpl(
             ValidationResult.Error("Failed to parse JSON file: ${e.localizedMessage}")
         }
     }
-
-    override suspend fun exportDataCsv(): String = withContext(dispatcher) {
-        val entities = dao.getAllChronologicalList()
-        com.johnpaulpatigas.motofuel.data.local.DataExporter.exportToCsv(entities)
-    }
-
-    override suspend fun importDataCsv(csvStr: String): ValidationResult = withContext(dispatcher) {
-        try {
-            val imported = com.johnpaulpatigas.motofuel.data.local.DataExporter.importFromCsv(csvStr)
-            if (imported.isEmpty()) {
-                return@withContext ValidationResult.Error("No valid refueling records found in imported CSV file.")
-            }
-            dao.deleteAll()
-            for (entity in imported) {
-                dao.insert(entity)
-            }
-            ValidationResult.Success
-        } catch (e: Exception) {
-            ValidationResult.Error("Failed to parse CSV file: ${e.localizedMessage}")
-        }
-    }
 }

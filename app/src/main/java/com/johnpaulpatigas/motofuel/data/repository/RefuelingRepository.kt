@@ -38,6 +38,4 @@ interface RefuelingRepository {
 
     suspend fun exportDataJson(): String
     suspend fun importDataJson(jsonStr: String): ValidationResult
-    suspend fun exportDataCsv(): String
-    suspend fun importDataCsv(csvStr: String): ValidationResult
 }

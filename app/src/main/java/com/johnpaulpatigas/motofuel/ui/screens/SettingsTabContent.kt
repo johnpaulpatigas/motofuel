@@ -72,12 +72,6 @@ fun SettingsTabContent(
         uri?.let { viewModel.exportDataToUri(context, it) }
     }
 
-    val exportCsvLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("text/csv")
-    ) { uri ->
-        uri?.let { viewModel.exportDataToUri(context, it) }
-    }
-
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
@@ -380,50 +374,31 @@ fun SettingsTabContent(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Export refueling logs to JSON or CSV backup files, or import logs from a backup.",
+                    text = "Export refueling logs to a JSON backup file, or import logs from a backup.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Row(
+                OutlinedButton(
+                    onClick = { exportJsonLauncher.launch("motofuel_backup.json") },
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    shape = androidx.compose.foundation.shape.CircleShape
                 ) {
-                    OutlinedButton(
-                        onClick = { exportJsonLauncher.launch("motofuel_backup.json") },
-                        modifier = Modifier.weight(1f),
-                        shape = androidx.compose.foundation.shape.CircleShape
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Download,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Export JSON", fontWeight = FontWeight.Bold)
-                    }
-
-                    OutlinedButton(
-                        onClick = { exportCsvLauncher.launch("motofuel_export.csv") },
-                        modifier = Modifier.weight(1f),
-                        shape = androidx.compose.foundation.shape.CircleShape
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Download,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Export CSV", fontWeight = FontWeight.Bold)
-                    }
+                    Icon(
+                        imageVector = Icons.Default.Download,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Export JSON", fontWeight = FontWeight.Bold)
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
 
                 OutlinedButton(
-                    onClick = { importLauncher.launch(arrayOf("application/json", "text/csv", "text/plain", "*/*")) },
+                    onClick = { importLauncher.launch(arrayOf("application/json")) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = androidx.compose.foundation.shape.CircleShape
                 ) {

@@ -1,7 +1,7 @@
 package com.johnpaulpatigas.motofuel.data.local
 
 /**
- * Utility class for exporting and importing MotoFuel refueling records to/from JSON and CSV strings.
+ * Utility class for exporting and importing MotoFuel refueling records to/from JSON strings.
  * Built with pure Kotlin string formatting and parsing for 100% offline portability and JVM test compatibility.
  */
 object DataExporter {
@@ -58,69 +58,8 @@ object DataExporter {
                 )
             }
         }
-        return list.sortedBy { it.timestamp }
-    }
-
-    fun exportToCsv(entities: List<RefuelingEntity>): String {
-        val sb = StringBuilder()
-        sb.append("Timestamp,OdometerKm,LitersAdded,PricePerLiter\n")
-        for (entity in entities) {
-            sb.append("${entity.timestamp},${entity.odometerKm},${entity.litersAdded},${entity.pricePerLiter ?: ""}\n")
-        }
-        return sb.toString()
-    }
-
-    fun importFromCsv(csvString: String): List<RefuelingEntity> {
-        val list = mutableListOf<RefuelingEntity>()
-        val lines = csvString.lines()
-        for (line in lines) {
-            val trimmed = line.trim()
-            if (trimmed.isEmpty() || trimmed.startsWith("Timestamp", ignoreCase = true) || trimmed.startsWith("Odometer", ignoreCase = true)) {
-                continue
-            }
-            val parts = trimmed.split(",")
-            if (parts.size >= 4) {
-                val timestamp = parts[0].trim().toLongOrNull() ?: System.currentTimeMillis()
-                val odo = parts[1].trim().toDoubleOrNull()
-                val liters = parts[2].trim().toDoubleOrNull()
-                val price = parts[3].trim().toDoubleOrNull()
-                if (odo != null && liters != null && odo > 0.0 && liters > 0.0) {
-                    list.add(
-                        RefuelingEntity(
-                            odometerKm = odo,
-                            litersAdded = liters,
-                            pricePerLiter = price,
-                            timestamp = timestamp
-                        )
-                    )
-                }
-            } else if (parts.size == 3) {
-                val timestamp = parts[0].trim().toLongOrNull() ?: System.currentTimeMillis()
-                val odo = parts[1].trim().toDoubleOrNull()
-                val liters = parts[2].trim().toDoubleOrNull()
-                if (odo != null && liters != null && odo > 0.0 && liters > 0.0) {
-                    list.add(
-                        RefuelingEntity(
-                            odometerKm = odo,
-                            litersAdded = liters,
-                            timestamp = timestamp
-                        )
-                    )
-                }
-            } else if (parts.size == 2) {
-                val odo = parts[0].trim().toDoubleOrNull()
-                val liters = parts[1].trim().toDoubleOrNull()
-                if (odo != null && liters != null && odo > 0.0 && liters > 0.0) {
-                    list.add(
-                        RefuelingEntity(
-                            odometerKm = odo,
-                            litersAdded = liters,
-                            timestamp = System.currentTimeMillis()
-                        )
-                    )
-                }
-            }
-        }
-        return list.sortedBy { it.timestamp }
+        return list.sortedWith(
+            compareBy<RefuelingEntity> { it.timestamp }.thenBy { it.odometerKm }
+        )
     }
 }

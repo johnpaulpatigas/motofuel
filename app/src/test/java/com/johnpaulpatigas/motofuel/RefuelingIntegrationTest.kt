@@ -24,7 +24,7 @@ import org.junit.Test
  * 6. Incorrect fuel entry
  * 7. Historical record correction
  * 8. Historical record deletion
- * 9. Backup and restore (JSON/CSV serialization and re-evaluation)
+ * 9. Backup and restore (JSON serialization and re-evaluation)
  * 10. Primary RLS estimate integrity
  */
 class RefuelingIntegrationTest {

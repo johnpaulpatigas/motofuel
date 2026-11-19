@@ -252,14 +252,7 @@ class FuelViewModel @Inject constructor(
                     inputStream.bufferedReader().readText()
                 } ?: ""
 
-                val isJson = content.trim().startsWith("[") || content.trim().startsWith("{")
-                val result = if (isJson) {
-                    repository.importDataJson(content)
-                } else {
-                    repository.importDataCsv(content)
-                }
-
-                when (result) {
+                when (val result = repository.importDataJson(content)) {
                     is ValidationResult.Success -> {
                         _uiState.update {
                             it.copy(userMessage = "Data successfully imported! All estimates recalculated.")
