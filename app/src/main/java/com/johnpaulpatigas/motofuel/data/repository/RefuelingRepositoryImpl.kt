@@ -60,8 +60,8 @@ class RefuelingRepositoryImpl(
         val existingEntities = dao.getAllChronologicalList()
         if (existingEntities.isNotEmpty()) {
             val latest = existingEntities.last()
-            if (odometerKm < latest.odometerKm) {
-                return@withContext ValidationResult.Error("Odometer reading ($odometerKm km) cannot be less than the previous recorded odometer reading (${latest.odometerKm} km).")
+            if (odometerKm <= latest.odometerKm) {
+                return@withContext ValidationResult.Error("Odometer reading ($odometerKm km) cannot be less than or equal to previous recorded odometer reading (${latest.odometerKm} km).")
             }
         }
 
@@ -98,14 +98,14 @@ class RefuelingRepositoryImpl(
         val targetIndex = allRecords.indexOfFirst { it.id == id }
         if (targetIndex > 0) {
             val prev = allRecords[targetIndex - 1]
-            if (odometerKm < prev.odometerKm) {
-                return@withContext ValidationResult.Error("Odometer reading ($odometerKm km) cannot be less than previous record (${prev.odometerKm} km).")
+            if (odometerKm <= prev.odometerKm) {
+                return@withContext ValidationResult.Error("Odometer reading ($odometerKm km) cannot be less than or equal to previous record (${prev.odometerKm} km).")
             }
         }
         if (targetIndex >= 0 && targetIndex < allRecords.size - 1) {
             val next = allRecords[targetIndex + 1]
-            if (odometerKm > next.odometerKm) {
-                return@withContext ValidationResult.Error("Odometer reading ($odometerKm km) cannot be greater than subsequent record (${next.odometerKm} km).")
+            if (odometerKm >= next.odometerKm) {
+                return@withContext ValidationResult.Error("Odometer reading ($odometerKm km) cannot be greater than or equal to subsequent record (${next.odometerKm} km).")
             }
         }
 

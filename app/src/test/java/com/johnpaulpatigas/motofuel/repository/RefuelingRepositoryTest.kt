@@ -108,8 +108,16 @@ class RefuelingRepositoryTest {
         val result = repository.validateAndAdd(odometerKm = 950.0, litersAdded = 5.0)
         assertTrue(result is ValidationResult.Error)
         assertEquals(
-            "Odometer reading (950.0 km) cannot be less than the previous recorded odometer reading (1000.0 km).",
+            "Odometer reading (950.0 km) cannot be less than or equal to previous recorded odometer reading (1000.0 km).",
             (result as ValidationResult.Error).message
+        )
+
+        // Adding equal odometer reading
+        val resultEqual = repository.validateAndAdd(odometerKm = 1000.0, litersAdded = 5.0)
+        assertTrue(resultEqual is ValidationResult.Error)
+        assertEquals(
+            "Odometer reading (1000.0 km) cannot be less than or equal to previous recorded odometer reading (1000.0 km).",
+            (resultEqual as ValidationResult.Error).message
         )
     }
 
