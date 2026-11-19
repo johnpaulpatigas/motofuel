@@ -1,7 +1,6 @@
 package com.johnpaulpatigas.motofuel.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.johnpaulpatigas.motofuel.data.local.PreferencesManager
 import com.johnpaulpatigas.motofuel.data.model.AppTheme
@@ -95,18 +94,6 @@ class FuelViewModel @Inject constructor(
                 targetKmLiters = target
             )
         }
-    }
-
-    fun setTankCapacity(capacityStr: String) {
-        val cap = capacityStr.trim().toDoubleOrNull() ?: 0.0
-        preferencesManager?.tankCapacityLiters = cap
-        _settingsConfig.update { it.copy(tankCapacityLiters = cap) }
-    }
-
-    fun setTargetKmLiters(targetStr: String) {
-        val target = targetStr.trim().toDoubleOrNull() ?: 0.0
-        preferencesManager?.targetKmLiters = target
-        _settingsConfig.update { it.copy(targetKmLiters = target) }
     }
 
     fun setCurrencySymbol(symbol: String) {
@@ -265,19 +252,6 @@ class FuelViewModel @Inject constructor(
             } catch (e: Exception) {
                 _uiState.update { it.copy(userMessage = "Import failed: ${e.localizedMessage}") }
             }
-        }
-    }
-
-    class Factory(
-        private val repository: RefuelingRepository,
-        private val preferencesManager: PreferencesManager? = null
-    ) : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            if (modelClass.isAssignableFrom(FuelViewModel::class.java)) {
-                return FuelViewModel(repository, preferencesManager) as T
-            }
-            throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
     }
 }
