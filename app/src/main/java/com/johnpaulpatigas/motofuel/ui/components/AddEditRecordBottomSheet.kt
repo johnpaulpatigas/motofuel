@@ -18,8 +18,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.LocalGasStation
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -244,7 +244,7 @@ fun AddEditRecordBottomSheet(
                 placeholder = { Text("e.g. 62.50") },
                 leadingIcon = {
                     Icon(
-                        imageVector = Icons.Default.AttachMoney,
+                        imageVector = Icons.Default.Payments,
                         contentDescription = null
                     )
                 },
@@ -303,7 +303,7 @@ fun AddEditRecordBottomSheet(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
-                                imageVector = Icons.Default.AttachMoney,
+                                imageVector = Icons.Default.Payments,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
