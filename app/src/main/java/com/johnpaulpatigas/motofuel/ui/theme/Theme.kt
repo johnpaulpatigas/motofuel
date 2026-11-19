@@ -242,16 +242,3 @@ fun MotoFuelTheme(
         )
     }
 }
-
-@Composable
-fun AppTheme(
-    appTheme: com.johnpaulpatigas.motofuel.data.model.AppTheme = com.johnpaulpatigas.motofuel.data.model.AppTheme.SYSTEM,
-    dynamicColor: Boolean = true,
-    content: @Composable () -> Unit
-) {
-    MotoFuelTheme(
-        appTheme = appTheme,
-        dynamicColor = dynamicColor,
-        content = content
-    )
-}
