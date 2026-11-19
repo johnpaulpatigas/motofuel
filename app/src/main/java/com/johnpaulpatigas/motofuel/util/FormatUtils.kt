@@ -18,12 +18,7 @@ object FormatUtils {
      * Format kilometer reading, e.g. 12500 or 12500.5
      */
     fun formatKm(value: Double): String {
-        val rounded = (value * 10).roundToInt() / 10.0
-        return if (rounded % 1.0 == 0.0) {
-            rounded.toLong().toString()
-        } else {
-            rounded.toString()
-        }
+        return formatOneDecimalClean(value)
     }
 
     /**
