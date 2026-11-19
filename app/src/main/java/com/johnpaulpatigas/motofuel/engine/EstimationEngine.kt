@@ -5,7 +5,6 @@ import com.johnpaulpatigas.motofuel.data.model.EstimationResult
 import com.johnpaulpatigas.motofuel.data.model.RefuelingRecord
 import com.johnpaulpatigas.motofuel.data.model.ReliabilityLevel
 import com.johnpaulpatigas.motofuel.data.model.TrendPoint
-import com.johnpaulpatigas.motofuel.util.FormatUtils
 import kotlin.math.max
 import kotlin.math.sqrt
 
@@ -91,7 +90,6 @@ class EstimationEngine(
         if (records.isEmpty()) {
             return EstimationResult(
                 reliability = ReliabilityLevel.INSUFFICIENT_DATA,
-                explanation = "No refueling records stored. Add your first record to set the odometer baseline.",
                 tankCapacityLiters = tankCapacityLiters,
                 targetKmLiters = targetKmLiters,
                 currencySymbol = currencySymbol
@@ -114,8 +112,7 @@ class EstimationEngine(
                 totalSpendCost = totalSpendCost,
                 tankCapacityLiters = tankCapacityLiters,
                 targetKmLiters = targetKmLiters,
-                currencySymbol = currencySymbol,
-                explanation = "Baseline odometer established at ${FormatUtils.formatKm(baseline.odometerKm)} km. Add a second record after riding to calculate fuel economy."
+                currencySymbol = currencySymbol
             )
         }
 
@@ -133,8 +130,7 @@ class EstimationEngine(
                 totalSpendCost = totalSpendCost,
                 tankCapacityLiters = tankCapacityLiters,
                 targetKmLiters = targetKmLiters,
-                currencySymbol = currencySymbol,
-                explanation = "Insufficient valid distance recorded between refuels. Ensure odometer readings increase."
+                currencySymbol = currencySymbol
             )
         }
 
@@ -197,7 +193,6 @@ class EstimationEngine(
             predictedKmLiters * tankCapacityLiters
         } else null
 
-        val distanceSinceLastRefuelKm = intervals.lastOrNull()?.intervalKm
         val efficiencyVsTarget = if (targetKmLiters > 0.0 && predictedKmLiters != null) {
             predictedKmLiters - targetKmLiters
         } else null
@@ -224,13 +219,6 @@ class EstimationEngine(
             recentPredictions = recentPredictions
         )
 
-        val explanation = buildExplanation(
-            reliability = reliability,
-            intervalCount = intervals.size,
-            totalDistanceKm = totalDistanceKm,
-            uncertaintyMargin = uncertaintyMargin
-        )
-
         // Build trend points for UI charts
         val trendPoints = mutableListOf<TrendPoint>()
 
@@ -240,8 +228,6 @@ class EstimationEngine(
 
             trendPoints.add(
                 TrendPoint(
-                    recordId = record.id,
-                    index = idx + 1,
                     odometerKm = record.odometerKm,
                     rlsPredictedKmLiters = rlsStateAtIdx?.theta
                 )
@@ -253,18 +239,14 @@ class EstimationEngine(
             predictedKmLiters = predictedKmLiters,
             uncertaintyMargin = uncertaintyMargin,
             efficiencyChangeSignal = finalCusumState.signal,
-            cusumGPlus = finalCusumState.gPlus,
-            cusumGMinus = finalCusumState.gMinus,
             totalDistanceKm = totalDistanceKm,
             totalFuelConsumedLiters = totalFuelConsumed,
             totalFuelAddedLiters = totalFuelAdded,
             recordCount = recordCount,
             intervalCount = intervals.size,
-            explanation = explanation,
             trendPoints = trendPoints,
             tankCapacityLiters = tankCapacityLiters,
             estimatedRangeKm = estimatedRangeKm,
-            distanceSinceLastRefuelKm = distanceSinceLastRefuelKm,
             targetKmLiters = targetKmLiters,
             efficiencyVsTarget = efficiencyVsTarget,
             totalSpendCost = totalSpendCost,
@@ -305,32 +287,6 @@ class EstimationEngine(
             }
             else -> {
                 ReliabilityLevel.LOW
-            }
-        }
-    }
-
-    private fun buildExplanation(
-        reliability: ReliabilityLevel,
-        intervalCount: Int,
-        totalDistanceKm: Double,
-        uncertaintyMargin: Double?
-    ): String {
-        val distStr = FormatUtils.formatKm(totalDistanceKm)
-        val marginStr = uncertaintyMargin?.let { " (±${FormatUtils.formatOneDecimal(it)} km/L)" } ?: ""
-        val intervalWord = if (intervalCount == 1) "interval" else "intervals"
-
-        return when (reliability) {
-            ReliabilityLevel.INSUFFICIENT_DATA -> {
-                "At least 2 refueling records (1 distance interval) with increased odometer readings are required to begin estimating fuel economy."
-            }
-            ReliabilityLevel.LOW -> {
-                "Low statistical confidence based on $intervalCount $intervalWord ($distStr km recorded). Add more refueling logs to reduce partial-tank inventory noise."
-            }
-            ReliabilityLevel.MEDIUM -> {
-                "Medium confidence based on $intervalCount intervals across $distStr km$marginStr."
-            }
-            ReliabilityLevel.HIGH -> {
-                "High confidence based on $intervalCount intervals across $distStr km$marginStr."
             }
         }
     }

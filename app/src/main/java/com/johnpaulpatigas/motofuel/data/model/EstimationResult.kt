@@ -10,8 +10,6 @@ enum class ReliabilityLevel {
 }
 
 data class TrendPoint(
-    val recordId: Long,
-    val index: Int,
     val odometerKm: Double,
     val rlsPredictedKmLiters: Double?
 )
@@ -21,18 +19,14 @@ data class EstimationResult(
     val predictedKmLiters: Double? = null,
     val uncertaintyMargin: Double? = null,
     val efficiencyChangeSignal: EfficiencyChangeType = EfficiencyChangeType.NONE,
-    val cusumGPlus: Double? = null,
-    val cusumGMinus: Double? = null,
     val totalDistanceKm: Double = 0.0,
     val totalFuelConsumedLiters: Double = 0.0,
     val totalFuelAddedLiters: Double = 0.0,
     val recordCount: Int = 0,
     val intervalCount: Int = 0,
-    val explanation: String = "",
     val trendPoints: List<TrendPoint> = emptyList(),
     val tankCapacityLiters: Double = 0.0,
     val estimatedRangeKm: Double? = null,
-    val distanceSinceLastRefuelKm: Double? = null,
     val targetKmLiters: Double = 0.0,
     val efficiencyVsTarget: Double? = null,
     val totalSpendCost: Double = 0.0,
