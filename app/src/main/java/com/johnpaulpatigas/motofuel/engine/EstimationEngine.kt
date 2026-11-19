@@ -84,15 +84,13 @@ class EstimationEngine(
     fun evaluate(
         records: List<RefuelingRecord>,
         tankCapacityLiters: Double = 0.0,
-        targetKmLiters: Double = 0.0,
-        currencySymbol: String = "₱"
+        targetKmLiters: Double = 0.0
     ): EstimationResult {
         if (records.isEmpty()) {
             return EstimationResult(
                 reliability = ReliabilityLevel.INSUFFICIENT_DATA,
                 tankCapacityLiters = tankCapacityLiters,
-                targetKmLiters = targetKmLiters,
-                currencySymbol = currencySymbol
+                targetKmLiters = targetKmLiters
             )
         }
 
@@ -111,8 +109,7 @@ class EstimationEngine(
                 intervalCount = 0,
                 totalSpendCost = totalSpendCost,
                 tankCapacityLiters = tankCapacityLiters,
-                targetKmLiters = targetKmLiters,
-                currencySymbol = currencySymbol
+                targetKmLiters = targetKmLiters
             )
         }
 
@@ -129,8 +126,7 @@ class EstimationEngine(
                 intervalCount = 0,
                 totalSpendCost = totalSpendCost,
                 tankCapacityLiters = tankCapacityLiters,
-                targetKmLiters = targetKmLiters,
-                currencySymbol = currencySymbol
+                targetKmLiters = targetKmLiters
             )
         }
 
@@ -250,8 +246,7 @@ class EstimationEngine(
             targetKmLiters = targetKmLiters,
             efficiencyVsTarget = efficiencyVsTarget,
             totalSpendCost = totalSpendCost,
-            costPerKm = costPerKm,
-            currencySymbol = currencySymbol
+            costPerKm = costPerKm
         )
     }
 

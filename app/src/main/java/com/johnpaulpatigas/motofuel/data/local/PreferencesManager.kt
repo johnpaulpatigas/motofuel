@@ -36,16 +36,9 @@ class PreferencesManager(context: Context) {
             prefs.edit { putFloat(KEY_TARGET_KM_LITERS, value.toFloat()) }
         }
 
-    var currencySymbol: String
-        get() = prefs.getString(KEY_CURRENCY_SYMBOL, "₱") ?: "₱"
-        set(value) {
-            prefs.edit { putString(KEY_CURRENCY_SYMBOL, value) }
-        }
-
     companion object {
         private const val KEY_APP_THEME = "key_app_theme"
         private const val KEY_TANK_CAPACITY = "key_tank_capacity"
         private const val KEY_TARGET_KM_LITERS = "key_target_km_liters"
-        private const val KEY_CURRENCY_SYMBOL = "key_currency_symbol"
     }
 }

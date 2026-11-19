@@ -29,15 +29,13 @@ class RefuelingRepositoryImpl(
 
     override fun getEstimationResult(
         tankCapacityLiters: Double,
-        targetKmLiters: Double,
-        currencySymbol: String
+        targetKmLiters: Double
     ): Flow<EstimationResult> {
         return getDerivedRecords().map { records ->
             engine.evaluate(
                 records = records,
                 tankCapacityLiters = tankCapacityLiters,
-                targetKmLiters = targetKmLiters,
-                currencySymbol = currencySymbol
+                targetKmLiters = targetKmLiters
             )
         }.flowOn(dispatcher)
     }

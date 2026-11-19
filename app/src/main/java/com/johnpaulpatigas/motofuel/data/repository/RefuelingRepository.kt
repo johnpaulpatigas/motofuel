@@ -16,8 +16,7 @@ interface RefuelingRepository {
     fun getDerivedRecords(): Flow<List<RefuelingRecord>>
     fun getEstimationResult(
         tankCapacityLiters: Double = 0.0,
-        targetKmLiters: Double = 0.0,
-        currencySymbol: String = "₱"
+        targetKmLiters: Double = 0.0
     ): Flow<EstimationResult>
 
     suspend fun validateAndAdd(

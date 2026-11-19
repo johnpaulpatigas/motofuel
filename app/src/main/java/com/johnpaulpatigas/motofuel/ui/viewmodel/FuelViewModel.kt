@@ -21,8 +21,7 @@ import javax.inject.Inject
 
 private data class SettingsConfig(
     val tankCapacityLiters: Double,
-    val targetKmLiters: Double,
-    val currencySymbol: String
+    val targetKmLiters: Double
 )
 
 /**
@@ -45,8 +44,7 @@ class FuelViewModel @Inject constructor(
     private val _settingsConfig = MutableStateFlow(
         SettingsConfig(
             tankCapacityLiters = preferencesManager?.tankCapacityLiters ?: 0.0,
-            targetKmLiters = preferencesManager?.targetKmLiters ?: 0.0,
-            currencySymbol = preferencesManager?.currencySymbol ?: "₱"
+            targetKmLiters = preferencesManager?.targetKmLiters ?: 0.0
         )
     )
 
@@ -60,8 +58,7 @@ class FuelViewModel @Inject constructor(
             }.flatMapLatest { (records, settings) ->
                 repository.getEstimationResult(
                     tankCapacityLiters = settings.tankCapacityLiters,
-                    targetKmLiters = settings.targetKmLiters,
-                    currencySymbol = settings.currencySymbol
+                    targetKmLiters = settings.targetKmLiters
                 ).map { estimation ->
                     records to estimation
                 }
@@ -94,11 +91,6 @@ class FuelViewModel @Inject constructor(
                 targetKmLiters = target
             )
         }
-    }
-
-    fun setCurrencySymbol(symbol: String) {
-        preferencesManager?.currencySymbol = symbol
-        _settingsConfig.update { it.copy(currencySymbol = symbol) }
     }
 
     fun openAddDialog() {
