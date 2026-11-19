@@ -102,13 +102,14 @@ fun DashboardHeroCard(
                     )
                 }
 
-                if (overall != null && intervalCount > 0) {
+                val recordCount = estimation.recordCount
+                if (overall != null && recordCount > 0) {
                     Surface(
                         shape = MaterialTheme.shapes.small,
                         color = MaterialTheme.colorScheme.surfaceContainerHighest
                     ) {
                         Text(
-                            text = "$intervalCount refuels logged",
+                            text = if (recordCount == 1) "1 refuel logged" else "$recordCount refuels logged",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,

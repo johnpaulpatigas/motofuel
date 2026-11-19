@@ -317,13 +317,14 @@ class EstimationEngine(
     ): String {
         val distStr = formatKm(totalDistanceKm)
         val marginStr = uncertaintyMargin?.let { " (±${formatOneDecimal(it)} km/L)" } ?: ""
+        val intervalWord = if (intervalCount == 1) "interval" else "intervals"
 
         return when (reliability) {
             ReliabilityLevel.INSUFFICIENT_DATA -> {
                 "At least 2 refueling records (1 distance interval) with increased odometer readings are required to begin estimating fuel economy."
             }
             ReliabilityLevel.LOW -> {
-                "Low statistical confidence based on $intervalCount interval ($distStr km recorded). Add more refueling logs to reduce partial-tank inventory noise."
+                "Low statistical confidence based on $intervalCount $intervalWord ($distStr km recorded). Add more refueling logs to reduce partial-tank inventory noise."
             }
             ReliabilityLevel.MEDIUM -> {
                 "Medium confidence based on $intervalCount intervals across $distStr km$marginStr."
