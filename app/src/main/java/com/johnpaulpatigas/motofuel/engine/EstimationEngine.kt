@@ -139,7 +139,6 @@ class EstimationEngine(
         }
 
         val totalDistanceKm = intervals.sumOf { it.intervalKm ?: 0.0 }
-        val totalFuelConsumed = intervals.sumOf { it.litersAdded }
 
         // Observations (distance km, fuel added L)
         val observations = intervals.map { Pair(it.intervalKm ?: 0.0, it.litersAdded) }
@@ -152,6 +151,12 @@ class EstimationEngine(
         val predictedKmLiters = if (finalRlsState.sampleCount > 0 && finalRlsState.theta > 0.0) {
             finalRlsState.theta
         } else null
+
+        val totalFuelConsumed = if (predictedKmLiters != null && predictedKmLiters > 0.0) {
+            totalDistanceKm / predictedKmLiters
+        } else {
+            0.0
+        }
 
         val uncertaintyMargin = if (finalRlsState.sampleCount >= 2) {
             finalRlsState.marginOfError95
@@ -197,8 +202,13 @@ class EstimationEngine(
             predictedKmLiters - targetKmLiters
         } else null
 
-        val costPerKm = if (totalDistanceKm > 0.0 && totalSpendCost > 0.0) {
-            totalSpendCost / totalDistanceKm
+        val recordsWithPrice = records.filter { (it.pricePerLiter ?: 0.0) > 0.0 && it.litersAdded > 0.0 }
+        val totalSpendWithPrice = recordsWithPrice.sumOf { (it.pricePerLiter ?: 0.0) * it.litersAdded }
+        val totalLitersWithPrice = recordsWithPrice.sumOf { it.litersAdded }
+        val avgPricePerLiter = if (totalLitersWithPrice > 0.0) totalSpendWithPrice / totalLitersWithPrice else null
+
+        val costPerKm = if (avgPricePerLiter != null && predictedKmLiters != null && predictedKmLiters > 0.0) {
+            avgPricePerLiter / predictedKmLiters
         } else null
 
         // Extract recent predictions for stability evaluation

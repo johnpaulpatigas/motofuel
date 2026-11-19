@@ -124,8 +124,10 @@ class RefuelingRepositoryTest {
 
         val estimation = repository.getEstimationResult().first()
         assertEquals(250.0, estimation.totalDistanceKm, 0.001)
-        assertEquals(8.0, estimation.totalFuelConsumedLiters, 0.001)
+        assertEquals(18.0, estimation.totalFuelAddedLiters, 0.001)
         assertNotNull(estimation.predictedKmLiters)
+        val expectedConsumed = 250.0 / estimation.predictedKmLiters!!
+        assertEquals(expectedConsumed, estimation.totalFuelConsumedLiters, 0.001)
     }
 
     @Test

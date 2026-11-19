@@ -75,12 +75,12 @@ class RefuelingIntegrationTest {
         val est2 = repository.getEstimationResult().first()
         assertEquals(1, est2.intervalCount)
         assertEquals(250.0, est2.totalDistanceKm, 1e-4)
-        assertEquals(8.0, est2.totalFuelConsumedLiters, 1e-4)
         assertEquals(31.25, est2.predictedKmLiters!!, 1e-4)
+        assertEquals(250.0 / 31.25, est2.totalFuelConsumedLiters, 1e-4)
     }
 
     @Test
-    fun `2 - Normal partial refueling excludes baseline fuel and sums accurately`() = runBlocking {
+    fun `2 - Normal partial refueling tracks fuel added and derives consumed fuel from ml model`() = runBlocking {
         // Baseline: 10,000 km, 10 L
         repository.validateAndAdd(odometerKm = 10000.0, litersAdded = 10.0, pricePerLiter = 60.0)
         // Fill 1: +150 km, 5 L
@@ -95,11 +95,9 @@ class RefuelingIntegrationTest {
         assertEquals(4, est.recordCount)
         assertEquals(3, est.intervalCount)
         assertEquals(500.0, est.totalDistanceKm, 1e-4)
-        assertEquals(15.0, est.totalFuelConsumedLiters, 1e-4) // 5 + 4 + 6
-        assertEquals(25.0, est.totalFuelAddedLiters, 1e-4)   // 10 baseline + 15 consumed
-
-        // RLS predicted km/L is calculated
+        assertEquals(25.0, est.totalFuelAddedLiters, 1e-4)
         assertNotNull(est.predictedKmLiters)
+        assertEquals(500.0 / est.predictedKmLiters!!, est.totalFuelConsumedLiters, 1e-4)
     }
 
     @Test
@@ -187,8 +185,8 @@ class RefuelingIntegrationTest {
 
         val updatedEst = repository.getEstimationResult().first()
         assertEquals(400.0, updatedEst.totalDistanceKm, 1e-4)
-        assertEquals(10.0, updatedEst.totalFuelConsumedLiters, 1e-4)
         assertNotNull(updatedEst.predictedKmLiters)
+        assertEquals(400.0 / updatedEst.predictedKmLiters!!, updatedEst.totalFuelConsumedLiters, 1e-4)
     }
 
     @Test
@@ -210,8 +208,8 @@ class RefuelingIntegrationTest {
         val estAfter = repository.getEstimationResult().first()
         assertEquals(1, estAfter.intervalCount)
         assertEquals(500.0, estAfter.totalDistanceKm, 1e-4)
-        assertEquals(10.0, estAfter.totalFuelConsumedLiters, 1e-4)
         assertEquals(50.0, estAfter.predictedKmLiters!!, 1e-4)
+        assertEquals(500.0 / 50.0, estAfter.totalFuelConsumedLiters, 1e-4)
     }
 
     @Test
@@ -236,6 +234,7 @@ class RefuelingIntegrationTest {
         assertEquals(origEst.recordCount, restoredEst.recordCount)
         assertEquals(origEst.totalDistanceKm, restoredEst.totalDistanceKm, 1e-4)
         assertEquals(origEst.totalFuelConsumedLiters, restoredEst.totalFuelConsumedLiters, 1e-4)
+        assertEquals(origEst.totalFuelAddedLiters, restoredEst.totalFuelAddedLiters, 1e-4)
         assertEquals(origEst.predictedKmLiters!!, restoredEst.predictedKmLiters!!, 1e-4)
         assertEquals(origEst.estimatedRangeKm!!, restoredEst.estimatedRangeKm!!, 1e-4)
     }
@@ -250,7 +249,9 @@ class RefuelingIntegrationTest {
         val est = repository.getEstimationResult(tankCapacityLiters = 8.0).first()
 
         assertEquals(500.0, est.totalDistanceKm, 1e-4)
-        assertEquals(15.0, est.totalFuelConsumedLiters, 1e-4)
+        assertEquals(25.0, est.totalFuelAddedLiters, 1e-4)
+        assertNotNull(est.predictedKmLiters)
+        assertEquals(500.0 / est.predictedKmLiters!!, est.totalFuelConsumedLiters, 1e-4)
 
         // RLS predicted economy is active and drives full tank range
         assertNotNull(est.predictedKmLiters)

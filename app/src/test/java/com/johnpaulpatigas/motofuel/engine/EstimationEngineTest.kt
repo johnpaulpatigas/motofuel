@@ -111,14 +111,14 @@ class EstimationEngineTest {
     }
 
     @Test
-    fun `evaluate - calculates predicted economy and excludes baseline fuel from consumed fuel`() {
+    fun `evaluate - calculates predicted economy and derives fuel consumed from ml model`() {
         // Record 0 (Baseline): Odo 10,000, Fuel 15.0 L
         // Record 1: Odo 10,200 (+200 km), Fuel 5.0 L -> km/L = 40.0
         // Record 2: Odo 10,500 (+300 km), Fuel 10.0 L -> km/L = 30.0
         val entities = listOf(
-            RefuelingEntity(id = 1, odometerKm = 10000.0, litersAdded = 15.0, timestamp = 1000L),
-            RefuelingEntity(id = 2, odometerKm = 10200.0, litersAdded = 5.0, timestamp = 2000L),
-            RefuelingEntity(id = 3, odometerKm = 10500.0, litersAdded = 10.0, timestamp = 3000L)
+            RefuelingEntity(id = 1, odometerKm = 10000.0, litersAdded = 15.0, pricePerLiter = 60.0, timestamp = 1000L),
+            RefuelingEntity(id = 2, odometerKm = 10200.0, litersAdded = 5.0, pricePerLiter = 60.0, timestamp = 2000L),
+            RefuelingEntity(id = 3, odometerKm = 10500.0, litersAdded = 10.0, pricePerLiter = 60.0, timestamp = 3000L)
         )
 
         val derived = engine.computeDerivedRecords(entities)
@@ -129,10 +129,15 @@ class EstimationEngineTest {
         assertEquals(2, result.intervalCount)
 
         assertEquals(500.0, result.totalDistanceKm, 0.001)
-        assertEquals(15.0, result.totalFuelConsumedLiters, 0.001) // 5.0 + 10.0
-        assertEquals(30.0, result.totalFuelAddedLiters, 0.001)   // 15.0 baseline + 15.0 consumed
-
+        assertEquals(30.0, result.totalFuelAddedLiters, 0.001)
         assertNotNull(result.predictedKmLiters)
+        val expectedConsumed = 500.0 / result.predictedKmLiters!!
+        assertEquals(expectedConsumed, result.totalFuelConsumedLiters, 0.001)
+
+        assertNotNull(result.costPerKm)
+        val expectedCostPerKm = 60.0 / result.predictedKmLiters!!
+        assertEquals(expectedCostPerKm, result.costPerKm!!, 0.001)
+
         assertNotNull(result.uncertaintyMargin)
     }
 
@@ -147,8 +152,10 @@ class EstimationEngineTest {
         val result = engine.evaluate(derived)
 
         assertEquals(500.0, result.totalDistanceKm, 0.001)
-        assertEquals(12.5, result.totalFuelConsumedLiters, 0.001)
+        assertEquals(112.5, result.totalFuelAddedLiters, 0.001)
         assertNotNull(result.predictedKmLiters)
+        val expectedConsumed = 500.0 / result.predictedKmLiters!!
+        assertEquals(expectedConsumed, result.totalFuelConsumedLiters, 0.001)
         assertFalse(result.predictedKmLiters!!.isNaN())
         assertFalse(result.predictedKmLiters!!.isInfinite())
     }
