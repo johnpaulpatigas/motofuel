@@ -5,8 +5,8 @@ import com.johnpaulpatigas.motofuel.data.model.EstimationResult
 import com.johnpaulpatigas.motofuel.data.model.RefuelingRecord
 import com.johnpaulpatigas.motofuel.data.model.ReliabilityLevel
 import com.johnpaulpatigas.motofuel.data.model.TrendPoint
+import com.johnpaulpatigas.motofuel.util.FormatUtils
 import kotlin.math.max
-import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 /**
@@ -115,7 +115,7 @@ class EstimationEngine(
                 tankCapacityLiters = tankCapacityLiters,
                 targetKmLiters = targetKmLiters,
                 currencySymbol = currencySymbol,
-                explanation = "Baseline odometer established at ${formatKm(baseline.odometerKm)} km. Add a second record after riding to calculate fuel economy."
+                explanation = "Baseline odometer established at ${FormatUtils.formatKm(baseline.odometerKm)} km. Add a second record after riding to calculate fuel economy."
             )
         }
 
@@ -315,8 +315,8 @@ class EstimationEngine(
         totalDistanceKm: Double,
         uncertaintyMargin: Double?
     ): String {
-        val distStr = formatKm(totalDistanceKm)
-        val marginStr = uncertaintyMargin?.let { " (±${formatOneDecimal(it)} km/L)" } ?: ""
+        val distStr = FormatUtils.formatKm(totalDistanceKm)
+        val marginStr = uncertaintyMargin?.let { " (±${FormatUtils.formatOneDecimal(it)} km/L)" } ?: ""
         val intervalWord = if (intervalCount == 1) "interval" else "intervals"
 
         return when (reliability) {
@@ -334,14 +334,4 @@ class EstimationEngine(
             }
         }
     }
-
-    private fun formatKm(value: Double): String {
-        val rounded = (value * 10).roundToInt() / 10.0
-        return if (rounded % 1.0 == 0.0) {
-            rounded.toLong().toString()
-        } else {
-            rounded.toString()
-        }
-    }
-    private fun formatOneDecimal(value: Double): String = ((value * 10).roundToInt() / 10.0).toString()
 }
